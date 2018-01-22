@@ -1,0 +1,22 @@
+# Defaults for config options defined in CONFIG
+$num_instances = 2
+$instance_name_prefix = "maas-client"
+
+
+if ENV["NUM_INSTANCES"].to_i > 0 && ENV["NUM_INSTANCES"]
+  $num_instances = ENV["NUM_INSTANCES"].to_i
+end
+
+Vagrant.configure(2) do |config|
+  # Contrail Box
+  config.vm.define vm_name = "maas-server" do |config|
+    config.vm.hostname = vm_name
+    config.vm.box = "ubuntu/xenial64"
+  end
+  (1..$num_instances).each do |i|
+    config.vm.define vm_name = "%s-%02d" % [$instance_name_prefix, i] do |config|
+      config.vm.hostname = vm_name
+      config.vm.box = "clink15/pxe"
+    end
+  end
+end

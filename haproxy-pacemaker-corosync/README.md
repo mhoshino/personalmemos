@@ -1,10 +1,12 @@
-Step 1. Active 2 boxes of Ubuntu
+# Steps for building a simple pacemaker + corosync Cluster
+
+### 1. Active 3 boxes of Ubuntu
 
 ```
 Mirantis:haproxy-pacemaker-corosync machi$ vagrant up
 ```
 
-Step 2. SSH into 1st Ubuntu
+### 2. SSH into 1st Ubuntu
 
 ```
 Mirantis:haproxy-pacemaker-corosync machi$ vagrant ssh ha-ubuntu-01
@@ -24,11 +26,13 @@ Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.4.0-109-generic x86_64)
 vagrant@ha-ubuntu-01:~$
 ```
 
+### 3. Sudo to root
+
 ```
 vagrant@ha-ubuntu-01:~$ sudo -s
 
 ```
-
+### 4. Install nginx
 
 ```
 root@ha-ubuntu-01:~# apt-get -y update
@@ -48,37 +52,70 @@ The following NEW packages will be installed:
 0 upgraded, 14 newly installed, 0 to remove and 19 not upgraded.
 Need to get 3,000 kB of archives.
 ```
+Add the following to determine which host when http access is on
 
 ```
-root@ha-ubuntu-01:~# vim /usr/share/nginx/html/index.html
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>Welcome to nginx!</h1>
-<p>This is primary node</p>
-</body>
-</html>
+root@ha-ubuntu-01:~# hostname > /var/www/html/index.nginx-debian.html
 ```
 
 
+### 5. Install pacemaker and corosync
 ```
 root@ha-ubuntu-01:~# apt-get install pacemaker
 ```
 
+### 6. Configure Corosync
+
+```
+root@ha-ubuntu-01:~# cat /etc/corosync/corosync.conf
+totem {
+  version: 2
+  cluster_name: ha-ubuntu
+  secauth: off
+  transport:udpu
+  interface {
+    ringnumber: 0
+    bindnetaddr: 192.168.0.0
+    broadcast: yes
+    mcastport: 5405
+  }
+}
+
+nodelist {
+  node {
+    ring0_addr: 192.168.0.101
+    name: ha-ubuntu-01
+    nodeid: 1
+  }
+  node {
+    ring0_addr: 192.168.0.102
+    name: ha-ubuntu-02
+    nodeid: 2
+  }
+  node {
+    ring0_addr: 192.168.0.103
+    name: ha-ubuntu-03
+    nodeid: 3
+  }
+}
+
+quorum {
+  provider: corosync_votequorum
+}
+```
+### 7. Repeat the steps on 2. to 7. on all nodes
+
+
+### 8. Create and Share corosync key
+
+On ha-ubuntu-01 Enter the following
+
 ```
 root@ha-ubuntu-01:~# apt-get install haveged
+root@ha-ubuntu-01:~# corosync-keygen
 ```
 
+On the other nodes create sshuser and ssh key file
 ```
 root@ha-ubuntu-02:~# useradd -m sshuser
 root@ha-ubuntu-02:~# su - sshuser
@@ -138,6 +175,8 @@ sshuser@ha-ubuntu-02:~$
 sshuser@ha-ubuntu-02:~$ cp -p ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys
 ```
 
+SCP the key from ha-ubuntu-01
+
 ```
 root@ha-ubuntu-01:~# cat <<EOF > sshkeytmp
 > -----BEGIN RSA PRIVATE KEY-----
@@ -169,17 +208,141 @@ root@ha-ubuntu-01:~# cat <<EOF > sshkeytmp
 > -----END RSA PRIVATE KEY-----
 > EOF
 root@ha-ubuntu-01:~# chmod 600 sshkeytmp
-```
-
-```
 root@ha-ubuntu-01:~# scp -i sshkeytmp /etc/corosync/authkey sshuser@192.168.0.102:/tmp
 authkey                                                                                                                                                                   100%  128     0.1KB/s   00:00
 root@ha-ubuntu-01:~#
 ```
 
+On ha-ubuntu-02 and ha-ubuntu-03 move the corosync key
 
 ```
-root@ha-ubuntu-02:~# apt-get install pacemaker
+root@ha-ubuntu-02:~# mv /tmp/authkey /etc/corosync/
+root@ha-ubuntu-02:~# chown root: /etc/corosync/authkey
+root@ha-ubuntu-02:~# chmod 400 /etc/corosync/authkey
 ```
 
 
+### 9. Restart corosync
+
+
+```
+root@ha-ubuntu-01:~# systemctl restart corosync
+root@ha-ubuntu-01:~# systemctl status corosync
+● corosync.service - Corosync Cluster Engine
+   Loaded: loaded (/lib/systemd/system/corosync.service; enabled; vendor preset: enabled)
+   Active: active (running) since Mon 2018-01-22 20:46:32 UTC; 2s ago
+ Main PID: 7025 (corosync)
+    Tasks: 2
+   Memory: 54.7M
+      CPU: 225ms
+   CGroup: /system.slice/corosync.service
+           └─7025 /usr/sbin/corosync -f
+
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [QB    ] server name: cpg
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [QB    ] server name: votequorum
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [QB    ] server name: quorum
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [TOTEM ] adding new UDPU member {192.168.0.101}
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [TOTEM ] adding new UDPU member {192.168.0.102}
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [TOTEM ] adding new UDPU member {192.168.0.103}
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [TOTEM ] A new membership (192.168.0.101:64) was formed. Members joined: 1
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]: notice  [TOTEM ] A new membership (192.168.0.101:68) was formed. Members joined: 2 3
+Jan 22 20:46:32 ha-ubuntu-01 corosync[7025]:  [TOTEM ] A new membership (192.168.0.101:68) was formed. Members joined: 2 3
+Jan 22 20:46:32 ha-ubuntu-01 systemd[1]: Started Corosync Cluster Engine.
+root@ha-ubuntu-01:~#
+root@ha-ubuntu-01:~#
+```
+Check corosync cluster status
+```
+root@ha-ubuntu-01:~# crm status
+Last updated: Mon Jan 22 20:46:39 2018		Last change: Mon Jan 22 20:35:29 2018 by hacluster via crmd on ha-ubuntu-01
+Stack: corosync
+Current DC: ha-ubuntu-02 (version 1.1.14-70404b0) - partition with quorum
+3 nodes and 0 resources configured
+
+Online: [ ha-ubuntu-01 ha-ubuntu-02 ha-ubuntu-03 ]
+
+Full list of resources:
+```
+
+### 10. start pacemaker
+```
+root@ha-ubuntu-01:~# sudo systemctl start pacemaker
+```
+
+### 11. create resources
+
+Create a virtual ip resource
+
+```
+root@ha-ubuntu-01:~# SHARED_VIP="192.168.0.200"
+root@ha-ubuntu-01:~# crm configure <<EOF
+>   primitive virtual-ip ocf:heartbeat:IPaddr \
+>     params ip="$SHARED_VIP"
+>
+>   property stonith-enabled=false
+>   commit
+> EOF
+```
+
+### 12. Create a nginx lsb resource
+
+```
+root@ha-ubuntu-02:/etc/systemd/system# crm configure primitive failover-nginx lsb::nginx op monitor interval=15s
+root@ha-ubuntu-02:/etc/systemd/system# crm status
+Last updated: Mon Jan 22 21:00:49 2018		Last change: Mon Jan 22 21:00:40 2018 by root via cibadmin on ha-ubuntu-02
+Stack: corosync
+Current DC: ha-ubuntu-02 (version 1.1.14-70404b0) - partition with quorum
+3 nodes and 2 resources configured
+
+Online: [ ha-ubuntu-01 ha-ubuntu-02 ha-ubuntu-03 ]
+
+Full list of resources:
+
+ virtual-ip	(ocf::heartbeat:IPaddr):	Started ha-ubuntu-02
+ failover-nginx	(lsb:nginx):	Started ha-ubuntu-01
+
+root@ha-ubuntu-02:/etc/systemd/system#
+```
+Group the resources
+
+```
+root@ha-ubuntu-02:/etc/systemd/system# crm configure group nginx-group virtual-ip failover-nginx
+root@ha-ubuntu-02:/etc/systemd/system#
+```
+Configure resource order
+
+```
+root@ha-ubuntu-02:/etc/systemd/system# crm configure order nginx-order virtual-ip failover-nginx
+root@ha-ubuntu-02:/etc/systemd/system# crm status
+Last updated: Mon Jan 22 21:08:32 2018		Last change: Mon Jan 22 21:08:31 2018 by root via cibadmin on ha-ubuntu-02
+Stack: corosync
+Current DC: ha-ubuntu-02 (version 1.1.14-70404b0) - partition with quorum
+3 nodes and 2 resources configured
+
+Online: [ ha-ubuntu-01 ha-ubuntu-02 ha-ubuntu-03 ]
+
+Full list of resources:
+
+ Resource Group: nginx-group
+     virtual-ip	(ocf::heartbeat:IPaddr):	Started ha-ubuntu-02
+     failover-nginx	(lsb:nginx):	Started ha-ubuntu-02
+
+root@ha-ubuntu-02:/etc/systemd/system# crm configure show
+node 1: ha-ubuntu-01
+node 2: ha-ubuntu-02
+node 3: ha-ubuntu-03
+primitive failover-nginx lsb:nginx \
+	op monitor interval=15s \
+	meta target-role=Started
+primitive virtual-ip IPaddr \
+	params ip=192.168.0.200
+group nginx-group virtual-ip failover-nginx
+order nginx-order virtual-ip failover-nginx
+property cib-bootstrap-options: \
+	have-watchdog=false \
+	dc-version=1.1.14-70404b0 \
+	cluster-infrastructure=corosync \
+	cluster-name=debian \
+	stonith-enabled=false
+root@ha-ubuntu-02:/etc/systemd/system#
+```

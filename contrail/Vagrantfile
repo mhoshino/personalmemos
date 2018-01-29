@@ -1,6 +1,6 @@
 # Defaults for config options defined in CONFIG
 $num_instances = 2
-$instance_name_prefix = "openstack"
+$instance_name_prefix = "contrail-openstack"
 
 
 if ENV["NUM_INSTANCES"].to_i > 0 && ENV["NUM_INSTANCES"]
@@ -9,16 +9,26 @@ end
 
 Vagrant.configure(2) do |config|
   # Contrail Box
-  config.vm.define vm_name = "contrail" do |config|
-    config.vm.hostname = vm_name
-    config.vm.box = "ubuntu/xenial64"
-    config.vm.network "private_network", ip: "192.168.0.10" 
+  config.vm.define vm_name = "contrail" do |_config|
+    _config.vm.hostname = "contrail"
+    _config.vm.box = "ubuntu/xenial64"
+    _config.vm.network "private_network", ip: "192.168.0.10" 
+    _config.disksize.size = '50GB'
+    _config.vm.provider "virtualbox" do |pmv|
+      pmv.memory = 4096
+      pmv.cpus = 4
+    end
   end
+
   (1..$num_instances).each do |i|
-    config.vm.define vm_name = "%s-%02d" % [$instance_name_prefix, i] do |config|
-      config.vm.hostname = vm_name
-      config.vm.box = "ubuntu/xenial64"
-      config.vm.network "private_network", ip: "192.168.0.10%d" % i
+    config.vm.define vm_name = "%s-%02d" % [$instance_name_prefix, i] do |_config|
+      _config.vm.hostname = vm_name
+      _config.vm.box = "ubuntu/xenial64"
+      _config.vm.network "private_network", ip: "192.168.0.10%d" % i
+      _config.vm.provider "virtualbox" do |pmv|
+        pmv.memory = 2048
+        pmv.cpus = 4
+      end
     end
   end
 end

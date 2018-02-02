@@ -1,0 +1,2 @@
+# To recover from mysql access
+root@ctl01:/var/lib/mysql# /usr/sbin/mysqld  --basedir=/usr --datadir=/var/lib/mysql --plugin-dir=/usr/lib/mysql/plugin --user=mysql  --open-files-limit=102400 --pid-file=/var/lib/mysql/ctl01.pid --socket=/var/run/mysqld/mysqld.sock --port=3306 --wsrep_new_cluster

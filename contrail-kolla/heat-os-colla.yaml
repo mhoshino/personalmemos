@@ -1,0 +1,189 @@
+heat_template_version: '2017-02-24'
+outputs:
+  floating_ip:
+    value:
+      get_attr: [floating_ip, floating_ip_address]
+  privtate_key:
+    value:
+      get_attr: [keypair, private_key]
+resources:
+  cloud_config:
+    properties:
+      cloud_config:
+        runcmd:
+        - echo "192.168.0.10 control" >> /etc/hosts
+        - echo "192.168.0.11 contrail" >> /etc/hosts
+        - echo "192.168.0.12 compute1" >> /etc/hosts
+        - echo "192.168.0.13 compute2" >> /etc/hosts
+        write_files:
+        - path: /root/.ssh/id_rsa
+          permissions: 0600
+          content: 
+            get_attr: [keypair, private_key]
+    type: OS::Heat::CloudConfig
+  compute1:
+    properties:
+      availability_zone: mcp-support
+      flavor: os_cmp_small
+      image: ubuntu-16-04-x64-201801051222
+      key_name: {get_resource: keypair}
+      name: compute1
+      networks:
+      - fixed_ip: 192.168.0.12
+        network: {get_resource: deploy_net}
+      - fixed_ip: 192.168.100.12
+        network: {get_resource: neutron_net}
+      security_groups:
+      - {get_resource: security_group}
+      user_data: {get_resource: cloud_config}
+      user_data_format: RAW
+    type: OS::Nova::Server
+  compute2:
+    properties:
+      availability_zone: mcp-support
+      flavor: os_cmp_small
+      image: ubuntu-16-04-x64-201801051222
+      key_name: {get_resource: keypair}
+      name: compute2
+      networks:
+      - fixed_ip: 192.168.0.13
+        network: {get_resource: deploy_net}
+      - fixed_ip: 192.168.100.13
+        network: {get_resource: neutron_net}
+      security_groups:
+      - {get_resource: security_group}
+      user_data: {get_resource: cloud_config}
+      user_data_format: RAW
+    type: OS::Nova::Server
+  contrail:
+    properties:
+      availability_zone: mcp-support
+      flavor: oc_aio_medium
+      image: ubuntu-16-04-x64-201801051222
+      key_name: {get_resource: keypair}
+      name: contrail
+      networks:
+      - fixed_ip: 192.168.0.11
+        network: {get_resource: deploy_net}
+      - fixed_ip: 192.168.100.11
+        network: {get_resource: neutron_net}
+      security_groups:
+      - {get_resource: security_group}
+      user_data: {get_resource: cloud_config}
+      user_data_format: RAW
+    type: OS::Nova::Server
+  control:
+    properties:
+      availability_zone: mcp-support
+      flavor: os_ha_ctl
+      image: ubuntu-16-04-x64-201801051222
+      key_name: {get_resource: keypair}
+      name: control
+      networks:
+      - fixed_ip: 192.168.0.10
+        network: {get_resource: deploy_net}
+      - fixed_ip: 192.168.100.10
+        network: {get_resource: neutron_net}
+      security_groups:
+      - {get_resource: security_group}
+      user_data: {get_resource: cloud_config}
+      user_data_format: RAW
+    type: OS::Nova::Server
+  deploy_net:
+    properties: {name: deploy_net}
+    type: OS::Neutron::Net
+  deploy_subnet:
+    properties:
+      cidr: 192.168.0.0/24
+      network: {get_resource: deploy_net}
+    type: OS::Neutron::Subnet
+  ext_router:
+    properties:
+      external_gateway_info: {network: public}
+    type: OS::Neutron::Router
+  ext_router_assignment:
+    properties:
+      router: {get_resource: ext_router}
+      subnet: {get_resource: deploy_subnet}
+    type: OS::Neutron::RouterInterface
+  control_floating_ip:
+    properties: {floating_network: public}
+    type: OS::Neutron::FloatingIP
+  control_floating_ip_asociate:
+    properties:
+      floatingip_id: {get_resource: control_floating_ip}
+      port_id:
+        get_attr:
+        - control
+        - addresses
+        - {get_resource: deploy_net}
+        - 0
+        - port
+  contrail_floating_ip:
+    properties: {floating_network: public}
+    type: OS::Neutron::FloatingIP
+  contrail_floating_ip_asociate:
+    properties:
+      floatingip_id: {get_resource: contrail_floating_ip}
+      port_id:
+        get_attr:
+        - contrail
+        - addresses
+        - {get_resource: deploy_net}
+        - 0
+        - port
+    type: OS::Neutron::FloatingIPAssociation
+  contrail_floating_ip:
+    properties: {floating_network: public}
+    type: OS::Neutron::FloatingIP
+  compute1_floating_ip_asociate:
+    properties:
+      floatingip_id: {get_resource: compute1_floating_ip}
+      port_id:
+        get_attr:
+        - compute1
+        - addresses
+        - {get_resource: deploy_net}
+        - 0
+        - port
+    type: OS::Neutron::FloatingIPAssociation
+  compute2_floating_ip:
+    properties: {floating_network: public}
+    type: OS::Neutron::FloatingIP
+  compute2_floating_ip_asociate:
+    properties:
+      floatingip_id: {get_resource: compute2_floating_ip}
+      port_id:
+        get_attr:
+        - compute2
+        - addresses
+        - {get_resource: deploy_net}
+        - 0
+        - port
+    type: OS::Neutron::FloatingIPAssociation
+  keyname_random: {type: 'OS::Heat::RandomString'}
+  keypair:
+    properties:
+      name:
+        get_attr: [keyname_random, value]
+      save_private_key: true
+    type: OS::Nova::KeyPair
+  neutron_net:
+    properties: {name: neutron_net}
+    type: OS::Neutron::Net
+  neutron_subnet:
+    properties:
+      cidr: 192.168.100.0/24
+      gateway_ip: 0.0.0.0
+      network: {get_resource: neutron_net}
+    type: OS::Neutron::Subnet
+  secgroup_random: {type: 'OS::Heat::RandomString'}
+  security_group:
+    properties:
+      name:
+        get_attr: [secgroup_random, value]
+      rules:
+      - {port_range_max: 65535, port_range_min: 0, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 65535, port_range_min: 0, protocol: udp, remote_ip_prefix: 0.0.0.0/0}
+      - {protocol: icmp, remote_ip_prefix: 0.0.0.0/0}
+    type: OS::Neutron::SecurityGroup

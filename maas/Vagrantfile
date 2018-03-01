@@ -9,14 +9,39 @@ end
 
 Vagrant.configure(2) do |config|
   # Contrail Box
-  config.vm.define vm_name = "maas-server" do |config|
-    config.vm.hostname = vm_name
-    config.vm.box = "ubuntu/xenial64"
-  end
-  (1..$num_instances).each do |i|
-    config.vm.define vm_name = "%s-%02d" % [$instance_name_prefix, i] do |config|
-      config.vm.hostname = vm_name
-      config.vm.box = "clink15/pxe"
+  config.vm.define vm_name = "cfg01" do |cfg01|
+    cfg01.vm.hostname = vm_name
+    cfg01.vm.box = "ubuntu/xenial64"
+    cfg01.vm.network "private_network", ip: "192.168.22.10" 
+    cfg01.vm.provider "virtualbox" do |pmv|
+      pmv.memory = 4096
+      pmv.cpus = 4
     end
   end
+
+  (1..3).each do | i |
+    config.vm.define vm_name = "cnt%s" % i do |cnt|
+      cnt.vm.hostname = vm_name
+      cnt.vm.box = "ubuntu/xenial64"
+      cnt.vm.network "private_network", ip: "192.168.22.10%s" % i
+      cnt.vm.provider "virtualbox" do |pmv|
+        pmv.memory = 4096
+        pmv.cpus = 4
+      end
+    end
+  end
+
+  (1..2).each do | i |
+    config.vm.define vm_name = "cmp%s" % i do |cmp|
+      cmp.vm.hostname = vm_name
+      cmp.vm.box = "ubuntu/xenial64"
+      cmp.vm.network "private_network", ip: "192.168.22.20%s" % i
+      cmp.vm.provider "virtualbox" do |pmv|
+        pmv.memory = 4096
+        pmv.cpus = 4
+      end
+    end
+  end
+
+
 end

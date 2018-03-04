@@ -102,9 +102,9 @@ resources:
                 git clone https://github.com/gokulpch/OpenContrail-Kolla
                 cp -p OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
                 sed -i 's/network_interface: "ens3"/network_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
-                sed -i 's/neutron_external_interface: "ens4"/network_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
+                sed -i 's/neutron_external_interface: "ens4"/network_external_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
                 sed -i 's/kolla_internal_vip_address: "10.87.1.49"/kolla_internal_vip_address: "control_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
-                sed -i 's/contrail_api_interface_address: "10.87.1.49"/contrail_api_interface_address: "contail_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
+                sed -i 's/contrail_api_interface_address: "10.87.1.49"/contrail_api_interface_address: "contrail_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
                 diff OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
                 cp -p OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
                 sed -i 's/1ocata/control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode

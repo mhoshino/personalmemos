@@ -94,7 +94,9 @@ resources:
               curl -sSL https://get.docker.io | bash
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
-              [[ `hostname`=="control_hostname" ]] && { 
+              apt-get install -y python
+              if [ `hostname`=="control_hostname" ]
+              then
                 apt-get install -y git python-pip sshpass python-oslo-config python-dev libffi-dev gcc libssl-dev qemu-kvm
                 pip install -U pip 
                 pip install -U ansible
@@ -123,7 +125,7 @@ resources:
                 sed -i 's/keystone_config: {ip: 10.87.1.49, admin_password: contrail1, auth_protocol: http}/keystone_config: {ip: control_ip, admin_password: contrail1, auth_protocol: http}/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
                 sed -i 's/vrouter_physical_interface: ens3/vrouter_physical_interface: contrail_device/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
                 diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org
-              }
+              fi
         write_files:
         - path: /root/.ssh/id_rsa
           permissions: 0600

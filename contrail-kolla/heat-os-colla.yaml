@@ -94,7 +94,7 @@ resources:
               apt-get install -y python docker docker.io
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
-              if [ `hostname`=="control_hostname" ]
+              if [ `hostname` = "control_hostname" ]
               then
                 apt-get install -y git python-pip sshpass python-oslo-config python-dev libffi-dev gcc libssl-dev qemu-kvm
                 pip install -U pip 

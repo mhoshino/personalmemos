@@ -91,10 +91,9 @@ resources:
               ssh-keyscan contrail_hostname >> /root/.ssh/known_hosts
               ssh-keyscan compute1_hostname >> /root/.ssh/known_hosts
               ssh-keyscan compute2_hostname >> /root/.ssh/known_hosts
-              curl -sSL https://get.docker.io | bash
+              apt-get install -y python docker docker.io
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
-              apt-get install -y python
               if [ `hostname`=="control_hostname" ]
               then
                 apt-get install -y git python-pip sshpass python-oslo-config python-dev libffi-dev gcc libssl-dev qemu-kvm

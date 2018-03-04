@@ -8,7 +8,7 @@ parameters:
     default: oc_aio_medium
   compute_flavor:
     type: string
-    default: os_ha_ctl
+    default: os_cmp_small
   image:
     type: string
     default: ubuntu-16-04-amd64-cloudimg

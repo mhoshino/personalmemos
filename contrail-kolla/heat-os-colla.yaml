@@ -92,6 +92,11 @@ resources:
               ssh-keyscan contrail_hostname >> /root/.ssh/known_hosts
               ssh-keyscan compute1_hostname >> /root/.ssh/known_hosts
               ssh-keyscan compute2_hostname >> /root/.ssh/known_hosts
+              ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
+              ssh-keyscan control_ip >> /root/.ssh/known_hosts
+              ssh-keyscan contrail_ip >> /root/.ssh/known_hosts
+              ssh-keyscan compute1_ip >> /root/.ssh/known_hosts
+              ssh-keyscan compute2_ip >> /root/.ssh/known_hosts
               apt-get install -y python docker docker.io
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
@@ -113,13 +118,13 @@ resources:
                 sed -i 's/ocata1/control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 sed -i 's/ocata2/compute1_hostname\ncompute2_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 diff OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
-                cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts.org
+                cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
                 sed -i '/^.contrail-controllers.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.contrail-analyticsdb.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.contrail-analytics.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.contrail-compute.$/{n;s/.*/compute1_ip\ncompute2_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.openstack-controllers.$/{n;s/.*/control_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts.org
+                diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
                 cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org
                 sed -i 's/global_config: { external_rabbitmq_servers: 10.87.1.49 }/global_config: { external_rabbitmq_servers: control_ip }/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
                 sed -i 's/keystone_config: {ip: 10.87.1.49, admin_password: contrail1, auth_protocol: http}/keystone_config: {ip: control_ip, admin_password: contrail1, auth_protocol: http}/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml

@@ -106,8 +106,8 @@ resources:
                 sed -i 's/contrail_api_interface_address: "10.87.1.49"/contrail_api_interface_address: "contail_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
                 diff OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
                 cp -p OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
-                sed -i '/ocata1/control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
-                sed -i '/ocata2/compute1_hostname\ncompute2_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/ocata1/control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/ocata2/compute1_hostname\ncompute2_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 diff OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
                 cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts.org
                 sed -i '/^.contrail-controllers.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts

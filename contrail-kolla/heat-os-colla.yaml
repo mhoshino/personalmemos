@@ -87,6 +87,7 @@ resources:
               echo "contrail_ip contrail_hostname" >> /etc/hosts
               echo "compute1_ip compute1_hostname" >> /etc/hosts
               echo "compute2_ip compute2_hostname" >> /etc/hosts
+              ssh-keyscan localhost >> /root/.ssh/known_hosts
               ssh-keyscan control_hostname >> /root/.ssh/known_hosts
               ssh-keyscan contrail_hostname >> /root/.ssh/known_hosts
               ssh-keyscan compute1_hostname >> /root/.ssh/known_hosts

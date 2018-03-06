@@ -46,7 +46,7 @@ resources:
       key_name: {get_param: key_name}
       name: 
         str_replace:
-          template: stackname-name
+          template: stacknamename
           params:
             stackname: { get_param: stackname }
             name: { get_param: name }

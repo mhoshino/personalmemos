@@ -112,8 +112,8 @@ resources:
                  then
                    break
                  fi
-                 echo "compute_ip$i stackname-compute_hostname$i" >> /etc/hosts
-                 ssh-keyscan stackname-compute_hostname$i >> /root/.ssh/known_hosts
+                 echo "compute_ip$i stacknamecompute_hostname$i" >> /etc/hosts
+                 ssh-keyscan stacknamecompute_hostname$i >> /root/.ssh/known_hosts
                  ssh-keyscan compute_ip$i >> /root/.ssh/known_hosts
                  computehosts_list="${computehosts_list}stackname-compute_hostname$i\n"
                  computeip_list="${computeip_list}compute_ip$i\n"
@@ -122,7 +122,7 @@ resources:
               apt-get install -y python docker docker.io
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
-              if [ `hostname` = "stackname-control_hostname" ]
+              if [ `hostname` = "stacknamecontrol_hostname" ]
               then
                 apt-get install -y git python-pip sshpass python-oslo-config python-dev libffi-dev gcc libssl-dev qemu-kvm
                 pip install -U pip
@@ -137,8 +137,8 @@ resources:
                 sed -i 's/contrail_api_interface_address: "10.87.1.49"/contrail_api_interface_address: "contrail_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
                 diff OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
                 cp -p OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
-                sed -i 's/1ocata/stackname-control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
-                sed -i 's/ocata1/stackname-control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/1ocata/stacknamecontrol_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/ocata1/stacknamecontrol_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 sed -i 's/ocata2/'"${computehosts_list}"'/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 diff OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
                 cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org

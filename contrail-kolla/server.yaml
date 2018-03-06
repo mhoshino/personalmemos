@@ -38,6 +38,7 @@ resources:
         - str_replace: 
             params:
               stackname: { get_param: "OS::stack_name" }
+              servercount: { get_param: [ networks, first_network , hosts, compute, count]}
               control_hostname:   { get_param: [ networks, first_network , hosts, control, name]}
               contrail_hostname:  { get_param: [ networks, first_network , hosts, contrail, name]}
               compute_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}

@@ -37,7 +37,7 @@ resources:
         runcmd:
         - str_replace: 
             params:
-              stackname: { get_param: OS::stack_name }
+              stackname: { get_param: "OS::stack_name" }
               control_hostname:   { get_param: [ networks, first_network , hosts, control, name]}
               contrail_hostname:  { get_param: [ networks, first_network , hosts, contrail, name]}
               compute1_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
@@ -130,7 +130,7 @@ resources:
         str_replace:
           template: stackname-name
           params:
-            stackname: { get_param: OS::stack_name }
+            stackname: { get_param: "OS::stack_name" }
             name: { get_param: name }
       networks: 
       - fixed_ip: { get_param: [ firstnet_ip ]}

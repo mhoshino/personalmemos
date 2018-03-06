@@ -60,7 +60,7 @@ outputs:
       get_attr: [keypair, private_key]
   control_floating_ip:
     value:
-      get_attr: [control_floating_ip, floating_ip_address]
+      get_attr: [control, floating_ip_address]
 resources:
   cloud_config:
     properties:
@@ -162,9 +162,9 @@ resources:
           flavor: { get_param: compute_flavor}
           image: { get_param: image}
           key_name: {get_resource: keypair}
-          name: { get_param: [ networks, first_network , hosts, compute1, name]}%index%
+          name: compute%index%
           networks: 
-            fixed_ip: 192.168.0.10%index%
+          - fixed_ip: 192.168.0.10%index%
             network: {get_resource: deploy_net}
           - fixed_ip: 192.168.100.20%index%
             network: {get_resource: neutron_net}

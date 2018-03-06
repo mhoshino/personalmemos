@@ -1,5 +1,7 @@
 heat_template_version: '2017-02-24'
 parameters:
+  name:
+    type: string
   flavor:
     type: string
   image:
@@ -12,14 +14,14 @@ parameters:
     type: string
   networks:
     type: json
-  seurity_groups:
+  security_groups:
     type: json
   key_name:
     type: string
   cloud_config:
     type: string
 outputs:
-  floating_ip_address
+  floating_ip_address:
     value:
       get_attr: [floating_ip, floating_ip_address]
 resources:

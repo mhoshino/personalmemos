@@ -170,7 +170,7 @@ resources:
           security_groups: {get_resource: security_group}
           cloud_config: {get_resource: cloud_config}
           public_net: { get_param: public_net }
-          deploy_net: { get_param: deploy_net }
+          deploy_net: { get_resource: deploy_net }
   contrail:
     properties:
       availability_zone: { get_param: availability_zone}
@@ -185,7 +185,7 @@ resources:
       security_groups: {get_resource: security_group}
       cloud_config: {get_resource: cloud_config}
       public_net: { get_param: public_net }
-      deploy_net: { get_param: deploy_net }
+      deploy_net: { get_resource: deploy_net }
     type: https://github.com/mhoshino/personalmemos/blob/master/contrail-kolla/server.yaml
   control:
     properties:
@@ -201,7 +201,7 @@ resources:
       security_groups: {get_resource: security_group}
       cloud_config: {get_resource: cloud_config}
       public_net: { get_param: public_net }
-      deploy_net: { get_param: deploy_net }
+      deploy_net: { get_resource: deploy_net }
     type: https://github.com/mhoshino/personalmemos/blob/master/contrail-kolla/server.yaml
   deploy_net:
     properties: {name: deploy_net}

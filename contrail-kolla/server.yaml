@@ -13,9 +13,9 @@ parameters:
   deploy_net:
     type: string
   networks:
-    type: json
+    type: string
   security_groups:
-    type: json
+    type: string
   key_name:
     type: string
   cloud_config:

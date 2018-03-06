@@ -2,22 +2,22 @@ heat_template_version: '2017-02-24'
 parameters:
   control_flavor:
     type: string
-    default: h1.tiny
+    default: os_ha_ctl
   contrail_flavor:
     type: string
-    default: h1.tiny
+    default: oc_aio_medium
   compute_flavor:
     type: string
-    default: h1.tiny
+    default: os_cmp_small
   image:
     type: string
     default: ubuntu-16-04-amd64-cloudimg
   availability_zone:
     type: string
-    default: nova
+    default: mcp-support
   public_net:
     type: string
-    default: floating-ips
+    default: public
   compute_count:
     type: string
     default: 2

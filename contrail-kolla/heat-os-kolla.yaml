@@ -61,7 +61,7 @@ resources:
   computes:
     type: OS::Heat::ResourceGroup
     properties:
-      count: 2
+      count: 1
       resource_def:
         type: https://raw.githubusercontent.com/mhoshino/personalmemos/master/contrail-kolla/server.yaml
         properties:
@@ -79,13 +79,13 @@ resources:
             str_replace:
               template: startip%index%
               params:
-                compute: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
+                startip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
           firstnet: {get_resource: deploy_net}
           secondnet_ip: 
             str_replace:
               template: startip%index%
               params:
-                compute: { get_param: [ networks, second_network , hosts, compute, ipprefix]}
+                startip: { get_param: [ networks, second_network , hosts, compute, ipprefix]}
           secondnet: {get_resource: neutron_net}
           security_groups: {get_resource: security_group}
           public_net: { get_param: public_net }

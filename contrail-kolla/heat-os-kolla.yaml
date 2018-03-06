@@ -70,7 +70,7 @@ resources:
           image: { get_param: image}
           key_name: {get_resource: keypair}
           networks: { get_parm: networks }
-          name: compute%index%
+          name: 
             str_replace:
               template: compute%index%
               params:

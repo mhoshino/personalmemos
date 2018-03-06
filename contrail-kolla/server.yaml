@@ -20,6 +20,14 @@ parameters:
     type: string
   cloud_config:
     type: string
+  network1:
+    type: string
+  network1_ip:
+    type: string
+  network2:
+    type: string
+  netwokr2_ip:
+    type: string
 outputs:
   floating_ip_address:
     value:
@@ -33,8 +41,13 @@ resources:
       image: { get_param: image}
       key_name: {get_param: keypair}
       name: { get_param: name }
-      networks: { get_param: networks }
-      security_groups: { get_param: security_groups}
+      networks: 
+      - fixed_ip: { get_param: [ network1_ip ]}
+        network: {get_param: network1}
+      - fixed_ip: { get_param: [ network2_ip]}
+        network: {get_param: network2}
+      security_groups: 
+      - { get_param: security_groups}
       user_data: {get_param: cloud_config}
       user_data_format: RAW
   floating_ip:

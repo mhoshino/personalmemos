@@ -163,13 +163,11 @@ resources:
           image: { get_param: image}
           key_name: {get_resource: keypair}
           name: compute%index%
-          networks: 
-          - fixed_ip: 192.168.0.10%index%
-            network: {get_resource: deploy_net}
-          - fixed_ip: 192.168.100.20%index%
-            network: {get_resource: neutron_net}
-          security_groups:
-          - {get_resource: security_group}
+          network1_ip: 192.168.0.10%index%
+          network1: {get_resource: deploy_net}
+          network2_ip: 192.168.100.20%index%
+          network2: {get_resource: neutron_net}
+          security_groups: {get_resource: security_group}
           cloud_config: {get_resource: cloud_config}
           public_net: { get_param: public_net }
           deploy_net: { get_param: deploy_net }
@@ -180,13 +178,11 @@ resources:
       image: { get_param: image}
       key_name: {get_resource: keypair}
       name: { get_param: [ networks, first_network , hosts, contrail, name]}
-      networks:
-      - fixed_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
-        network: {get_resource: deploy_net}
-      - fixed_ip: { get_param: [ networks, second_network , hosts, contrail, ip]}
-        network: {get_resource: neutron_net}
-      security_groups:
-      - {get_resource: security_group}
+      network1_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
+      network1: {get_resource: deploy_net}
+      network2_ip: { get_param: [ networks, second_network , hosts, contrail, ip]}
+      network2: {get_resource: neutron_net}
+      security_groups: {get_resource: security_group}
       cloud_config: {get_resource: cloud_config}
       public_net: { get_param: public_net }
       deploy_net: { get_param: deploy_net }
@@ -198,13 +194,11 @@ resources:
       image: { get_param: image}
       key_name: {get_resource: keypair}
       name: { get_param: [ networks, first_network , hosts, control, name]}
-      networks:
-      - fixed_ip: { get_param: [ networks, first_network , hosts, control, ip]}
-        network: {get_resource: deploy_net}
-      - fixed_ip: { get_param: [ networks, second_network , hosts, control, ip]}
-        network: {get_resource: neutron_net}
-      security_groups:
-      - {get_resource: security_group}
+      network1_ip: { get_param: [ networks, first_network , hosts, control, ip]}
+      network1: {get_resource: deploy_net}
+      network2_ip: { get_param: [ networks, second_network , hosts, control, ip]}
+      network2: {get_resource: neutron_net}
+      security_groups: {get_resource: security_group}
       cloud_config: {get_resource: cloud_config}
       public_net: { get_param: public_net }
       deploy_net: { get_param: deploy_net }

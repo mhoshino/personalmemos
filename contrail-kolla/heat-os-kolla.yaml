@@ -2,13 +2,13 @@ heat_template_version: '2017-02-24'
 parameters:
   control_flavor:
     type: string
-    default: os_ha_ctl
+    default: h1.tiny
   contrail_flavor:
     type: string
-    default: oc_aio_medium
+    default: h1.tiny
   compute_flavor:
     type: string
-    default: os_cmp_small
+    default: h1.tiny
   image:
     type: string
     default: ubuntu-16-04-amd64-cloudimg
@@ -18,6 +18,9 @@ parameters:
   public_net:
     type: string
     default: public
+  compute_count:
+    type: string
+    default: 2
   networks:
     type: json
     default:
@@ -33,7 +36,6 @@ parameters:
             ip: 192.168.0.11
           compute:
             name: compute
-            count: 2
             ipprefix: 192.168.0.10
       second_network:
         device: ens4
@@ -47,7 +49,6 @@ parameters:
             ip: 192.168.100.11
           compute:
             name: compute
-            count: 2
             ipprefix: 192.168.100.10
       docker_bridge: 172.19.0.1/24
 outputs:
@@ -61,15 +62,18 @@ resources:
   computes:
     type: OS::Heat::ResourceGroup
     properties:
-      count: 1
+      count: { get_param: compute_count }
       resource_def:
         type: server.yaml
+        depends_on:
+        - deploy_subnet
+        - neutron_subnet
         properties:
+          prefix: {get_param: 'OS::stack_name' }
           availability_zone: { get_param: availability_zone}
           flavor: { get_param: compute_flavor}
           image: { get_param: image}
           key_name: {get_resource: keypair}
-          networks: { get_parm: networks }
           name: 
             str_replace:
               template: compute%index%
@@ -89,42 +93,46 @@ resources:
           secondnet: {get_resource: neutron_net}
           security_groups: {get_resource: security_group}
           public_net: { get_param: public_net }
-          private_key: { get_attr: [keypair, private_key] }
-          public_key: { get_attr: [keypair, public_key] }
+          cloud_config: { get_resource: cloud-config }
   contrail:
     properties:
+      prefix: {get_param: 'OS::stack_name' }
       availability_zone: { get_param: availability_zone}
       flavor:  { get_param: contrail_flavor}
       image: { get_param: image}
       key_name: {get_resource: keypair}
       name: { get_param: [ networks, first_network , hosts, contrail, name]}
-      networks: { get_parm: networks }
       firstnet_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
       firstnet: {get_resource: deploy_net}
       secondnet_ip: { get_param: [ networks, second_network , hosts, contrail, ip]}
       secondnet: {get_resource: neutron_net}
       security_groups: {get_resource: security_group}
       public_net: { get_param: public_net }
-      private_key: { get_attr: [keypair, private_key] }
-      public_key: { get_attr: [keypair, public_key] }
+      cloud-config: { get_resource: cloud-config }
     type: server.yaml
   control:
     properties:
+      prefix: {get_param: 'OS::stack_name' }
       availability_zone: { get_param: availability_zone}
       flavor: { get_param: control_flavor}
       image: { get_param: image}
       key_name: {get_resource: keypair}
       name: { get_param: [ networks, first_network , hosts, control, name]}
-      networks: { get_parm: networks }
       firstnet_ip: { get_param: [ networks, first_network , hosts, control, ip]}
       firstnet: {get_resource: deploy_net}
       secondnet_ip: { get_param: [ networks, second_network , hosts, control, ip]}
       secondnet: {get_resource: neutron_net}
       security_groups: {get_resource: security_group}
       public_net: { get_param: public_net }
-      private_key: { get_attr: [keypair, private_key] }
-      public_key: { get_attr: [keypair, public_key] }
+      cloud-config: { get_resource: cloud-config }
     type: server.yaml
+  cloud-config:
+    properties:
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+      compute_count: { get_param: compute_count }      
+    type: cloud-config.yaml
   deploy_net:
     properties: {name: deploy_net}
     type: OS::Neutron::Net

@@ -10,23 +10,19 @@ parameters:
     type: string
   public_net:
     type: string
-  deploy_net:
-    type: string
-  networks:
-    type: string
   security_groups:
     type: string
   key_name:
     type: string
   cloud_config:
     type: string
-  network1:
+  firstnet:
     type: string
-  network1_ip:
+  firstnet_ip:
     type: string
-  network2:
+  secondnet:
     type: string
-  netwokr2_ip:
+  secondnet_ip:
     type: string
 outputs:
   floating_ip_address:
@@ -42,10 +38,10 @@ resources:
       key_name: {get_param: keypair}
       name: { get_param: name }
       networks: 
-      - fixed_ip: { get_param: [ network1_ip ]}
-        network: {get_param: network1}
-      - fixed_ip: { get_param: [ network2_ip]}
-        network: {get_param: network2}
+      - fixed_ip: { get_param: [ firstnet_ip ]}
+        network: {get_param: firstnet}
+      - fixed_ip: { get_param: [ secondnet_ip]}
+        network: {get_param: secondnet}
       security_groups: 
       - { get_param: security_groups}
       user_data: {get_param: cloud_config}
@@ -60,7 +56,7 @@ resources:
         get_attr:
         - server
         - addresses
-        - {get_param: deploy_net}
+        - {get_param: firstnet}
         - 0
         - port
     type: OS::Neutron::FloatingIPAssociation

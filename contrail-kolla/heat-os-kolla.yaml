@@ -67,7 +67,7 @@ resources:
     properties:
       count: { get_param: compute_count }
       resource_def:
-        type: server.yaml
+        type: https://raw.githubusercontent.com/mhoshino/personalmemos/master/contrail-kolla/server.yaml
         properties:
           stackname: {get_param: 'OS::stack_name' }
           availability_zone: { get_param: availability_zone}
@@ -118,7 +118,7 @@ resources:
       private_key: { get_attr: [ keypair, private_key ]}
       networks: { get_param: networks }
       compute_count: { get_param: compute_count }
-    type: server.yaml
+    type: https://raw.githubusercontent.com/mhoshino/personalmemos/master/contrail-kolla/server.yaml
   control:
     depends_on:
     - deploy_subnet
@@ -140,7 +140,7 @@ resources:
       private_key: { get_attr: [ keypair, private_key ]}
       networks: { get_param: networks }
       compute_count: { get_param: compute_count }
-    type: server.yaml
+    type: https://raw.githubusercontent.com/mhoshino/personalmemos/master/contrail-kolla/server.yaml
   deploy_net:
     properties: {name: deploy_net}
     type: OS::Neutron::Net

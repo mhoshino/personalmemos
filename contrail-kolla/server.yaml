@@ -12,7 +12,7 @@ parameters:
     type: string
   security_groups:
     type: string
-  key_name:
+  keypair:
     type: string
   firstnet:
     type: string
@@ -122,11 +122,11 @@ resources:
         - path: /root/.ssh/id_rsa
           permissions: 0600
           content:
-            get_attr: [key_name, private_key]
+            get_attr: [keypair, private_key]
         - path: /root/.ssh/authorized_keys
           permissions: 0600
           content:
-            get_attr: [key_name, public_key ]
+            get_attr: [keypair, public_key ]
     type: OS::Heat::CloudConfig
   server:
     type: OS::Nova::Server

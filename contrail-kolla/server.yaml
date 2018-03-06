@@ -40,31 +40,39 @@ resources:
               stackname: { get_param: "OS::stack_name" }
               control_hostname:   { get_param: [ networks, first_network , hosts, control, name]}
               contrail_hostname:  { get_param: [ networks, first_network , hosts, contrail, name]}
-              compute1_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
-              compute2_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
+              compute_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
               contrail_device: { get_param: [ networks, first_network , device]}
               control_ip:  { get_param: [ networks, first_network , hosts, control, ip]}
               contrail_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
-              compute1_ip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
-              compute2_ip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
+              compute_ip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
               docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
               external_device: { get_param: [ networks, second_network, device]}
             template: | 
               set -x
               echo "control_ip  stackname-control_hostname" >> /etc/hosts
               echo "contrail_ip stackname-contrail_hostname" >> /etc/hosts
-              echo "compute1_ip stackname-compute1_hostname" >> /etc/hosts
-              echo "compute2_ip stackname-compute2_hostname" >> /etc/hosts
               ssh-keyscan localhost >> /root/.ssh/known_hosts
               ssh-keyscan stackname-control_hostname >> /root/.ssh/known_hosts
-              ssh-keyscan stackname-contrail_hostname >> /root/.ssh/known_hosts
-              ssh-keyscan stackname-compute1_hostname >> /root/.ssh/known_hosts
-              ssh-keyscan stackname-compute2_hostname >> /root/.ssh/known_hosts
+              ssh-keyscan stackname-contrail_hostname >> /root/.ssh/known_hosts 
               ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
               ssh-keyscan control_ip >> /root/.ssh/known_hosts
               ssh-keyscan contrail_ip >> /root/.ssh/known_hosts
-              ssh-keyscan compute1_ip >> /root/.ssh/known_hosts
-              ssh-keyscan compute2_ip >> /root/.ssh/known_hosts
+              i=1
+              compute_hosts_list=''
+              compute_ip_list=''
+              while true
+              do
+                 if [ $i -gt servercount ]
+                 then
+                   break
+                 fi
+                 echo "compute_ip$i stackname-compute_hostname$i" >> /etc/hosts
+                 ssh-keyscan stackname-compute_hostname$i >> /root/.ssh/known_hosts
+                 ssh-keyscan compute_ip$i >> /root/.ssh/known_hosts
+                 compute_hosts_list="${compute_hosts_list}stackname-compute_hostname$i\n"
+                 compute_ip_list="${compute_ip_list}compute_ip$i\n"
+                 i=$((i+1))
+              done
               apt-get install -y python docker docker.io
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
@@ -85,13 +93,13 @@ resources:
                 cp -p OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
                 sed -i 's/1ocata/stackname-control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 sed -i 's/ocata1/stackname-control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
-                sed -i 's/ocata2/stackname-compute1_hostname\nstackname-compute2_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/ocata2/'"${compute_hosts_list}"'/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
                 diff OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
                 cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
                 sed -i '/^.contrail-controllers.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.contrail-analyticsdb.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.contrail-analytics.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                sed -i '/^.contrail-compute.$/{n;s/.*/compute1_ip\ncompute2_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
+                sed -i '/^.contrail-compute.$/{n;s/.*/'"${compute_ip_list}"'/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 sed -i '/^.openstack-controllers.$/{n;s/.*/control_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
                 diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
                 cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org

@@ -14,8 +14,6 @@ parameters:
     type: string
   key_name:
     type: string
-  cloud_config:
-    type: string
   firstnet:
     type: string
   firstnet_ip:
@@ -24,11 +22,103 @@ parameters:
     type: string
   secondnet_ip:
     type: string
+  networks:
+    type: json
 outputs:
   floating_ip_address:
     value:
       get_attr: [floating_ip, floating_ip_address]
 resources:
+  cloud_config:
+    properties:
+      cloud_config:
+        disable_root: 0
+        package_upgrade: true
+        runcmd:
+        - str_replace: 
+            params:
+              stackname: { get_param: OS::stack_name }
+              control_hostname:   { get_param: [ networks, first_network , hosts, control, name]}
+              contrail_hostname:  { get_param: [ networks, first_network , hosts, contrail, name]}
+              compute1_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
+              compute2_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
+              contrail_device: { get_param: [ networks, first_network , device]}
+              control_ip:  { get_param: [ networks, first_network , hosts, control, ip]}
+              contrail_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
+              compute1_ip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
+              compute2_ip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
+              docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
+              external_device: { get_param: [ networks, second_network, device]}
+            template: | 
+              set -x
+              echo "control_ip  stackname-control_hostname" >> /etc/hosts
+              echo "contrail_ip stackname-contrail_hostname" >> /etc/hosts
+              echo "compute1_ip stackname-compute1_hostname" >> /etc/hosts
+              echo "compute2_ip stackname-compute2_hostname" >> /etc/hosts
+              ssh-keyscan localhost >> /root/.ssh/known_hosts
+              ssh-keyscan stackname-control_hostname >> /root/.ssh/known_hosts
+              ssh-keyscan stackname-contrail_hostname >> /root/.ssh/known_hosts
+              ssh-keyscan stackname-compute1_hostname >> /root/.ssh/known_hosts
+              ssh-keyscan stackname-compute2_hostname >> /root/.ssh/known_hosts
+              ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
+              ssh-keyscan control_ip >> /root/.ssh/known_hosts
+              ssh-keyscan contrail_ip >> /root/.ssh/known_hosts
+              ssh-keyscan compute1_ip >> /root/.ssh/known_hosts
+              ssh-keyscan compute2_ip >> /root/.ssh/known_hosts
+              apt-get install -y python docker docker.io
+              python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
+              systemctl restart docker
+              if [ `hostname` = "stackname-control_hostname" ]
+              then
+                apt-get install -y git python-pip sshpass python-oslo-config python-dev libffi-dev gcc libssl-dev qemu-kvm
+                pip install -U pip 
+                pip install -U ansible
+                pip install python-openstackclient
+                pip install  pyOpenSSL==16.2.0 
+                git clone https://github.com/gokulpch/OpenContrail-Kolla
+                cp -p OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
+                sed -i 's/network_interface: "ens3"/network_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
+                sed -i 's/neutron_external_interface: "ens4"/network_external_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
+                sed -i 's/kolla_internal_vip_address: "10.87.1.49"/kolla_internal_vip_address: "control_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
+                sed -i 's/contrail_api_interface_address: "10.87.1.49"/contrail_api_interface_address: "contrail_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
+                diff OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
+                cp -p OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
+                sed -i 's/1ocata/stackname-control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/ocata1/stackname-control_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                sed -i 's/ocata2/stackname-compute1_hostname\nstackname-compute2_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
+                diff OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
+                cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
+                sed -i '/^.contrail-controllers.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
+                sed -i '/^.contrail-analyticsdb.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
+                sed -i '/^.contrail-analytics.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
+                sed -i '/^.contrail-compute.$/{n;s/.*/compute1_ip\ncompute2_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
+                sed -i '/^.openstack-controllers.$/{n;s/.*/control_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
+                diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
+                cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org
+                sed -i 's/global_config: { external_rabbitmq_servers: 10.87.1.49 }/global_config: { external_rabbitmq_servers: control_ip }/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
+                sed -i 's/keystone_config: {ip: 10.87.1.49, admin_password: contrail1, auth_protocol: http}/keystone_config: {ip: control_ip, admin_password: contrail1, auth_protocol: http}/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
+                sed -i 's/vrouter_physical_interface: ens3/vrouter_physical_interface: contrail_device/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
+                diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org
+                echo 'export OS_USERNAME=admin
+                export OS_PASSWORD=contrail1
+                export OS_PROJECT_NAME=admin
+                export OS_USER_DOMAIN_NAME=Default
+                export OS_PROJECT_DOMAIN_NAME=Default
+                export OS_AUTH_URL=http://control_ip:35357/v3
+                export OS_IDENTITY_API_VERSION=3
+                export OS_IMAGE_API_VERSION=2' > /root/openstackrc
+              fi
+              
+        write_files:
+        - path: /root/.ssh/id_rsa
+          permissions: 0600
+          content:
+            get_attr: [keypair, private_key]
+        - path: /root/.ssh/authorized_keys
+          permissions: 0600
+          content:
+            get_attr: [keypair, public_key]
+    type: OS::Heat::CloudConfig
   server:
     type: OS::Nova::Server
     properties:
@@ -36,7 +126,12 @@ resources:
       flavor: { get_param: flavor}
       image: { get_param: image}
       key_name: {get_param: keypair}
-      name: { get_param: name }
+      name: 
+        str_replace:
+          template: stackname-name
+          params:
+            stackname: { get_param: OS::stack_name }
+            name: { get_param: name }
       networks: 
       - fixed_ip: { get_param: [ firstnet_ip ]}
         network: {get_param: firstnet}
@@ -44,7 +139,7 @@ resources:
         network: {get_param: secondnet}
       security_groups: 
       - { get_param: security_groups}
-      user_data: {get_param: cloud_config}
+      user_data: {get_resource: cloud_config}
       user_data_format: RAW
   floating_ip:
     properties: {floating_network: { get_param: public_net }}
@@ -60,4 +155,3 @@ resources:
         - 0
         - port
     type: OS::Neutron::FloatingIPAssociation
-

@@ -1,0 +1,52 @@
+heat_template_version: '2017-02-24'
+parameters:
+  flavor:
+    type: string
+  image:
+    type: string
+  availability_zone:
+    type: string
+  public_net:
+    type: string
+  deploy_net:
+    type: string
+  networks:
+    type: json
+  seurity_groups:
+    type: json
+  key_name:
+    type: string
+  cloud_config:
+    type: string
+outputs:
+  floating_ip_address
+    value:
+      get_attr: [floating_ip, floating_ip_address]
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: flavor}
+      image: { get_param: image}
+      key_name: {get_param: keypair}
+      name: { get_param: name }
+      networks: { get_param: networks }
+      security_groups: { get_param: security_groups}
+      user_data: {get_param: cloud_config}
+      user_data_format: RAW
+  floating_ip:
+    properties: {floating_network: { get_param: public_net }}
+    type: OS::Neutron::FloatingIP
+  floating_ip_asociate:
+    properties:
+      floatingip_id: {get_resource: floating_ip}
+      port_id:
+        get_attr:
+        - server
+        - addresses
+        - {get_param: deploy_net}
+        - 0
+        - port
+    type: OS::Neutron::FloatingIPAssociation
+

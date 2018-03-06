@@ -14,10 +14,10 @@ parameters:
     default: ubuntu-16-04-amd64-cloudimg
   availability_zone:
     type: string
-    default: mcp-support
+    default: nova
   public_net:
     type: string
-    default: public
+    default: floating-ips
   compute_count:
     type: string
     default: 2
@@ -61,15 +61,15 @@ outputs:
 resources:
   computes:
     type: OS::Heat::ResourceGroup
+    depends_on:
+    - deploy_subnet
+    - neutron_subnet
     properties:
       count: { get_param: compute_count }
       resource_def:
         type: server.yaml
-        depends_on:
-        - deploy_subnet
-        - neutron_subnet
         properties:
-          prefix: {get_param: 'OS::stack_name' }
+          stackname: {get_param: 'OS::stack_name' }
           availability_zone: { get_param: availability_zone}
           flavor: { get_param: compute_flavor}
           image: { get_param: image}
@@ -93,10 +93,16 @@ resources:
           secondnet: {get_resource: neutron_net}
           security_groups: {get_resource: security_group}
           public_net: { get_param: public_net }
-          cloud_config: { get_resource: cloud-config }
+          public_key: { get_attr: [ keypair, public_key ]}
+          private_key: { get_attr: [ keypair, private_key ]}
+          networks: { get_param: networks }
+          compute_count: { get_param: compute_count }
   contrail:
+    depends_on:
+    - deploy_subnet
+    - neutron_subnet
     properties:
-      prefix: {get_param: 'OS::stack_name' }
+      stackname: {get_param: 'OS::stack_name' }
       availability_zone: { get_param: availability_zone}
       flavor:  { get_param: contrail_flavor}
       image: { get_param: image}
@@ -108,11 +114,17 @@ resources:
       secondnet: {get_resource: neutron_net}
       security_groups: {get_resource: security_group}
       public_net: { get_param: public_net }
-      cloud-config: { get_resource: cloud-config }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+      compute_count: { get_param: compute_count }
     type: server.yaml
   control:
+    depends_on:
+    - deploy_subnet
+    - neutron_subnet
     properties:
-      prefix: {get_param: 'OS::stack_name' }
+      stackname: {get_param: 'OS::stack_name' }
       availability_zone: { get_param: availability_zone}
       flavor: { get_param: control_flavor}
       image: { get_param: image}
@@ -124,15 +136,11 @@ resources:
       secondnet: {get_resource: neutron_net}
       security_groups: {get_resource: security_group}
       public_net: { get_param: public_net }
-      cloud-config: { get_resource: cloud-config }
-    type: server.yaml
-  cloud-config:
-    properties:
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
       networks: { get_param: networks }
-      compute_count: { get_param: compute_count }      
-    type: cloud-config.yaml
+      compute_count: { get_param: compute_count }
+    type: server.yaml
   deploy_net:
     properties: {name: deploy_net}
     type: OS::Neutron::Net

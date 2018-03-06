@@ -173,9 +173,9 @@ resources:
         - path: /root/.ssh/id_rsa
           permissions: 0600
           content:
-            get_params: private_key
+            get_param: private_key
         - path: /root/.ssh/authorized_keys
           permissions: 0600
           content:
-            get_params: public_key
+            get_param: public_key
     type: OS::Heat::CloudConfig

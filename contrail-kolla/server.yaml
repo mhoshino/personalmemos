@@ -122,11 +122,11 @@ resources:
         - path: /root/.ssh/id_rsa
           permissions: 0600
           content:
-            get_attr: [keypair, private_key]
+            get_attr: [key_name, private_key]
         - path: /root/.ssh/authorized_keys
           permissions: 0600
           content:
-            get_attr: [keypair, public_key]
+            get_attr: [key_name, public_key ]
     type: OS::Heat::CloudConfig
   server:
     type: OS::Nova::Server

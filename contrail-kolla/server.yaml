@@ -24,6 +24,10 @@ parameters:
     type: string
   networks:
     type: json
+  public_key:
+    type: string
+  private_key:
+    type: string
 outputs:
   floating_ip_address:
     value:
@@ -122,11 +126,11 @@ resources:
         - path: /root/.ssh/id_rsa
           permissions: 0600
           content:
-            get_attr: [{get_param: key_name}, private_key]
+            get_params: private_key
         - path: /root/.ssh/authorized_keys
           permissions: 0600
           content:
-            get_attr: [{get_param: key_name}, public_key ]
+            get_params: public_key
     type: OS::Heat::CloudConfig
   server:
     type: OS::Nova::Server

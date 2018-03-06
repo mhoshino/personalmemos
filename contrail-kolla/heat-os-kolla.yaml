@@ -148,7 +148,7 @@ resources:
     properties:
       cidr: { get_param: [ networks, first_network , cidr]}
       network: {get_resource: deploy_net}
-      dns_nameservers: [ 8.8.8.8, 8.8.8.4 ]
+      dns_nameservers: [ 172.18.208.44 ]
     type: OS::Neutron::Subnet
   ext_router:
     properties:

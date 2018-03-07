@@ -58,7 +58,7 @@ resources:
       network: {get_param: firstnet}
       fixed_ips: [ {  "ip_address": { get_param: firstnet_ip } } ]
       security_groups: 
-      - { get_resource: security_groups}      
+      - { get_resource: security_group}      
     type: OS::Neutron::Port
   secondnet_port:
     properties:

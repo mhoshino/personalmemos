@@ -64,6 +64,7 @@ resources:
     depends_on:
     - deploy_subnet
     - neutron_subnet
+    - security_group
     properties:
       count: { get_param: compute_count }
       resource_def:
@@ -101,6 +102,7 @@ resources:
     depends_on:
     - deploy_subnet
     - neutron_subnet
+    - security_group
     properties:
       stackname: {get_param: 'OS::stack_name' }
       availability_zone: { get_param: availability_zone}
@@ -123,6 +125,7 @@ resources:
     depends_on:
     - deploy_subnet
     - neutron_subnet
+    - security_group
     properties:
       stackname: {get_param: 'OS::stack_name' }
       availability_zone: { get_param: availability_zone}

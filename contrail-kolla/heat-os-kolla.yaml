@@ -64,7 +64,6 @@ resources:
     depends_on:
     - deploy_subnet
     - neutron_subnet
-    - security_group
     properties:
       count: { get_param: compute_count }
       resource_def:
@@ -92,7 +91,6 @@ resources:
               params:
                 startip: { get_param: [ networks, second_network , hosts, compute, ipprefix]}
           secondnet: {get_resource: neutron_net}
-          security_groups: {get_resource: security_group}
           public_net: { get_param: public_net }
           public_key: { get_attr: [ keypair, public_key ]}
           private_key: { get_attr: [ keypair, private_key ]}
@@ -114,7 +112,6 @@ resources:
       firstnet: {get_resource: deploy_net}
       secondnet_ip: { get_param: [ networks, second_network , hosts, contrail, ip]}
       secondnet: {get_resource: neutron_net}
-      security_groups: {get_resource: security_group}
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
@@ -137,7 +134,6 @@ resources:
       firstnet: {get_resource: deploy_net}
       secondnet_ip: { get_param: [ networks, second_network , hosts, control, ip]}
       secondnet: {get_resource: neutron_net}
-      security_groups: {get_resource: security_group}
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}

@@ -12,8 +12,6 @@ parameters:
     type: string
   public_net:
     type: string
-  security_groups:
-    type: string
   key_name:
     type: string
   firstnet:
@@ -60,7 +58,7 @@ resources:
       network: {get_param: firstnet}
       fixed_ips: [ {  "ip_address": { get_param: firstnet_ip } } ]
       security_groups: 
-      - { get_param: security_groups}      
+      - { get_resource: security_groups}      
     type: OS::Neutron::Port
   secondnet_port:
     properties:
@@ -75,6 +73,13 @@ resources:
       floatingip_id: {get_resource: floating_ip}
       port_id: { get_resource: firstnet_port }
     type: OS::Neutron::FloatingIPAssociation
+  security_group:
+    properties:
+      rules:
+      - {port_range_max: 65535, port_range_min: 0, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 65535, port_range_min: 0, protocol: udp, remote_ip_prefix: 0.0.0.0/0}
+      - {protocol: icmp, remote_ip_prefix: 0.0.0.0/0}
+    type: OS::Neutron::SecurityGroup
   cloud_config:
     properties:
       cloud_config:

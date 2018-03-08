@@ -73,7 +73,7 @@ cd /OpenContrail-Kolla/kolla-ansible/ansible/
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=bootstrap-servers kolla-host.yml
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=deploy site.yml
 ```
-### Key Difference in kolla
+### Logs and config files
 - All logs files will be under /var/lib/volumes/kolla/_data
 - All config files will be under /etc/kolla
 
@@ -85,6 +85,16 @@ This will create the following.
 cd /OpenContrail-Kolla/contrail-ansible/playbooks/
 ansible-playbook -i inventory/my-inventory site.yml
 ```
+### Access to contrail UI
+
+Find the contrail floating IP with the following command
+```
+openstack stack resource show <stack name> contrail
+```
+
+Access the following
+https://<contrail floating ip>:8143
+admin/contrail1/default
 
 
 ## Initial OpenStack setup and verification

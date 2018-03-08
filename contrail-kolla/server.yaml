@@ -195,6 +195,7 @@ resources:
                 sed -i 's/^storage01/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
                 sed -i 's/^monitoring01/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
                 sed -i 's/^compute01/'"${computehosts_list}"'/g' /kolla-ansible/ansible/inventory/multinode
+                echo 'orchestration_engine: "ANSIBLE"' >> /kolla-ansible/ansible/group_vars/all.yml
               fi
               wc_notify --data-binary '{"status": "SUCCESS"}'
         write_files:

@@ -176,10 +176,24 @@ resources:
                 cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/roles/neutron/handlers/main.yml /kolla-ansible/ansible/roles/neutron/handlers/main.yml
                 cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/roles/neutron/tasks/config.yml /kolla-ansible/ansible/roles/neutron/tasks/config.yml
                 cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/roles/neutron/templates/* /kolla-ansible/ansible/roles/neutron/templates/
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/group_vars/* /kolla-ansible/ansible/group_vars/
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/inventory/* /kolla-ansible/ansible/inventory/
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml /kolla-ansible/etc/kolla/globals.yml
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/etc/kolla/passwords.yml /kolla-ansible/etc/kolla/passwords.yml
+                sed -i '/^kolla_base_distro/d;/^openstack_release/d;/^kolla_internal_vip_address/d;/^enable_haproxy/d;/^network_interface/d;/^nova_compute_image_full/d;/^neutron_server_image_full/d;/^neutron_server_image_full/d;/^enable_neutron_opencontrail/d;/^enable_neutron_opencontrail/d;/^contrail_api_interface_address/d;/^neutron_external_interface/d' /kolla-ansible/etc/kolla/globals.yml
+                echo 'kolla_base_distro: "ubuntu"
+                openstack_release: "ocata"
+                kolla_internal_vip_address: "control_ip"
+                enable_haproxy: "no"
+                network_interface: "contrail_device"
+                nova_compute_image_full: "gokulpch/ubuntu-binary-nova-compute:5.0.0"
+                neutron_server_image_full: "gokulpch/ubuntu-binary-neutron-server:5.0.0"
+                enable_neutron_opencontrail: "yes"
+                contrail_api_interface_address: "contrail_ip"
+                neutron_external_interface: "external_device"' >> /kolla-ansible/etc/kolla/globals.yml
+                sed -i 's/password:/password: contrail1/g' /kolla-ansible/etc/kolla/passwords.yml 
+                find /kolla-ansible/ -type f | xargs sed -i 's/memcache_security_strategy = ENCRYPT/memcache_security_strategy = NONE/g'
+                sed -i 's/control01\ncontrol02\ncontrol03/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
+                sed -i 's/network01\nnetwork02/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
+                sed -i 's/storage01/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
+                sed -i 's/monitoring01/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
+                sed -i 's/compute01/'"${computehosts_list}"'/g' /kolla-ansible/ansible/inventory/multinode
               fi
               wc_notify --data-binary '{"status": "SUCCESS"}'
         write_files:

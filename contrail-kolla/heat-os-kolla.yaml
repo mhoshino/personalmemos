@@ -21,6 +21,10 @@ parameters:
   compute_count:
     type: string
     default: 2
+  dns_servers:
+    type: comma_delimited_list
+    label: ports
+    default: 172.18.208.44
   networks:
     type: json
     default:
@@ -145,7 +149,12 @@ resources:
     properties:
       cidr: { get_param: [ networks, first_network , cidr]}
       network: {get_resource: deploy_net}
-      dns_nameservers: [ 172.18.208.44 ]
+      dns_nameservers: 
+        repeat:
+          for_each:
+            dns_server: { get_param: dns_servers }
+          template:
+          - dns_server
     type: OS::Neutron::Subnet
   ext_router:
     properties:

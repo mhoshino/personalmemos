@@ -77,7 +77,7 @@ ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/
 - All logs files will be under /var/lib/volumes/kolla/_data
 - All config files will be under /etc/kolla
 
-## Install Conrail kolla
+## Install Contrail kolla
 This will create the following.
 - Adds contrail configuration to OpenStack
 - Deploys and configures contrail node and compute node

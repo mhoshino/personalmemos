@@ -93,7 +93,9 @@ openstack stack resource show <stack name> contrail
 ```
 
 Access the following
+```
 https://<contrail floating ip>:8143
+```
 admin/contrail1/default
 
 

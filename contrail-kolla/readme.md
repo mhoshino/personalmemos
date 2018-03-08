@@ -46,13 +46,34 @@ cd /kolla-ansible/ansible/
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=bootstrap-servers kolla-host.yml
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=deploy site.yml
 ```
-If this fails try the following (this will use older version of kolla so there maybe known bugs included)
+If execution fails first check if rabbitmq is running.
+In error states you well see rabbitmq status falling into a loop of "Restarting"
+```
+root@mhoshi3control:/kolla-ansible/ansible# docker ps --filter name=rabbitmq
+CONTAINER ID        IMAGE                                COMMAND             CREATED             STATUS                              PORTS               NAMES
+96fdc5f5f037        kolla/ubuntu-binary-rabbitmq:ocata   "kolla_start"       8 minutes ago       Restarting (1) About a minute ago                       rabbitmq
+```
+If that is the case, do the following
+```
+cd /var/lib/docker/volumes/rabbitmq/_data/
+rm .erlang.cookie
+```
+Wait a minute and reexute the following
+```
+cd /kolla-ansible/ansible/
+ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=deploy site.yml
+```
+If still failes try the following
 
 ```
 cd /OpenContrail-Kolla/kolla-ansible/ansible/
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=bootstrap-servers kolla-host.yml
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=deploy site.yml
 ```
+### Differences compaired in Kolla
+- All logs files will be under /var/lib/volumes/kolla/_data
+- All config files will be under /etc/kolla
+
 ## Install Conrail kolla
 This will create the following.
 - Adds contrail configuration to OpenStack

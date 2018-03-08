@@ -31,6 +31,7 @@ heat output-show -a <stackname>
 The output will contain the following
 - The IP address for the control node
 - The ssh private key for accessing all nodes
+
 Login with the following command
 ```
 ssh -i <private key> -l root <ip address of control>

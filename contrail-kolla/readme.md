@@ -1,4 +1,7 @@
 # OpenStack Heat Template for creating Kolla + Contrail Environment
+## What this does
+- Creates an OpenStack Ocata Environment using Kolla
+- Deploys dockerized OpenContrail v4.0
 ## Prereqs
 - OpenStack Environment Supporting Heat Template version '2017-02-24'
 - Ubuntu 16.04 Image Prepared

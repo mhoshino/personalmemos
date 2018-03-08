@@ -23,7 +23,7 @@ parameters:
     default: 2
   dns_servers:
     type: comma_delimited_list
-    label: ports
+    label: dns_servers
     default: 172.18.208.44
   networks:
     type: json

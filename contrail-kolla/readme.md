@@ -70,7 +70,7 @@ cd /OpenContrail-Kolla/kolla-ansible/ansible/
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=bootstrap-servers kolla-host.yml
 ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=deploy site.yml
 ```
-### Differences compaired in Kolla
+### Key Difference in kolla
 - All logs files will be under /var/lib/volumes/kolla/_data
 - All config files will be under /etc/kolla
 
@@ -82,3 +82,32 @@ This will create the following.
 cd /OpenContrail-Kolla/contrail-ansible/playbooks/
 ansible-playbook -i inventory/my-inventory site.yml
 ```
+
+
+## Initial OpenStack setup and verification
+
+```
+source openstackrc
+wget http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img
+openstack image create "cirros" \
+   --file cirros-0.3.4-x86_64-disk.img \
+   --disk-format qcow2 --container-format bare \
+   --public
+openstack flavor create --id 0 --vcpus 1 --ram 128 --disk 1 m1.nano
+openstack network create test
+openstack subnet create --network test --subnet-range 1.1.1.0/24 test-subnet
+openstack server create --image cirros --flavor m1.nano --network test test
+```
+
+Verify the VM started correctly with the IP address
+
+```
+openstack console log show test
+```
+
+## Set Contrail For External Access
+
+Enable simple gateway.
+WIP
+
+

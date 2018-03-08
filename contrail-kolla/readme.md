@@ -1,9 +1,9 @@
 # OpenStack Heat Template for creating Kolla + Contrail Environment
 ## Prereqs
-- OpenStack Environment Supporting Heat
+- OpenStack Environment Supporting Heat Template version '2017-02-24'
 - Ubuntu 16.04 Image Prepared
 - External Network Already Configured
-- Internet Access from the VMs
+- Deployed VM's will need internet access
 - Minimum 4 Instance/FloatingIPs/SecutiryGroups will be created so check quota is enough
 ## Deploy Heat template
 This will create the following

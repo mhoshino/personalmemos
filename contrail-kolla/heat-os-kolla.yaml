@@ -154,7 +154,7 @@ resources:
           for_each:
             dns_server: { get_param: dns_servers }
           template:
-          - dns_server
+            dns_server
     type: OS::Neutron::Subnet
   ext_router:
     properties:

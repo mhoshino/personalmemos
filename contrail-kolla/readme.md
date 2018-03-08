@@ -22,7 +22,7 @@ You may change the stack parameter to fit you environment
 - availability_zone: The availabilityzone to deploy the instances
 - public_net: Point name or id of public network
 - compute_count: number of compute nodes
-- dns_server_list: list of dns 
+- dns_servers: list of dns 
 - network: Json formated network information
 ## Accessing the environment
 ```

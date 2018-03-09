@@ -212,7 +212,7 @@ resources:
     type: OS::Heat::WaitCondition
     properties:
       handle: {get_resource: wait_handle}
-      timeout: 300
+      timeout: 1200
   wait_handle:
     type: OS::Heat::WaitConditionHandle
 

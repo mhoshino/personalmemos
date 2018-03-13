@@ -88,7 +88,7 @@ resources:
             template: |
               apt install -y nodejs nodejs-legacy npm
               pip install 'setuptools>=26' 
-              apt-get install -y python docker docker.io
+              apt-get install -y python docker docker.io docker-compose
               python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
               systemctl restart docker
               git clone --recurse-submodules https://github.com/Mirantis/ceph-lcm.git decapod

@@ -1,0 +1,185 @@
+heat_template_version: '2017-02-24'
+parameters:
+  control_flavor:
+    type: string
+    default: k8s_ctl_medium
+  contrail_flavor:
+    type: string
+    default: oc_aio_medium
+  compute_flavor:
+    type: string
+    default: k8s_ctl_small
+  image:
+    type: string
+    default: ubuntu-16-04-amd64-cloudimg
+  availability_zone:
+    type: string
+    default: mcp-support
+  public_net:
+    type: string
+    default: public
+  compute_count:
+    type: string
+    default: 2
+  dns_servers:
+    type: comma_delimited_list
+    label: dns_servers
+    default: 172.18.208.44
+  networks:
+    type: json
+    default:
+      first_network:
+        device: ens3
+        cidr: 192.168.0.0/24
+        hosts:
+          control:
+            name: control
+            ip: 192.168.0.10
+          contrail:
+            name: contrail
+            ip: 192.168.0.11
+          compute:
+            name: compute
+            ipprefix: 192.168.0.10
+      second_network:
+        device: ens4
+        cidr: 192.168.100.0/24
+        hosts:
+          control:
+            name: control
+            ip: 192.168.100.10
+          contrail:
+            name: contrail
+            ip: 192.168.100.11
+          compute:
+            name: compute
+            ipprefix: 192.168.100.10
+      docker_bridge: 172.19.0.1/24
+outputs:
+  privtate_key:
+    value:
+      get_attr: [keypair, private_key]
+  control_floating_ip:
+    value:
+      get_attr: [control, floating_ip_address]
+resources:
+  computes:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+    - deploy_subnet
+    - neutron_subnet
+    properties:
+      count: { get_param: compute_count }
+      resource_def:
+        type: server.yaml
+        properties:
+          stackname: {get_param: 'OS::stack_name' }
+          availability_zone: { get_param: availability_zone}
+          flavor: { get_param: compute_flavor}
+          image: { get_param: image}
+          key_name: {get_resource: keypair}
+          name: 
+            str_replace:
+              template: compute%index%
+              params:
+                compute: { get_param: [ networks, first_network , hosts, compute, name]}
+          firstnet_ip: 
+            str_replace:
+              template: startip%index%
+              params:
+                startip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
+          firstnet: {get_resource: deploy_net}
+          secondnet_ip: 
+            str_replace:
+              template: startip%index%
+              params:
+                startip: { get_param: [ networks, second_network , hosts, compute, ipprefix]}
+          secondnet: {get_resource: neutron_net}
+          public_net: { get_param: public_net }
+          public_key: { get_attr: [ keypair, public_key ]}
+          private_key: { get_attr: [ keypair, private_key ]}
+          networks: { get_param: networks }
+          compute_count: { get_param: compute_count }
+  contrail:
+    depends_on:
+    - deploy_subnet
+    - neutron_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor:  { get_param: contrail_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, first_network , hosts, contrail, name]}
+      firstnet_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
+      firstnet: {get_resource: deploy_net}
+      secondnet_ip: { get_param: [ networks, second_network , hosts, contrail, ip]}
+      secondnet: {get_resource: neutron_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+      compute_count: { get_param: compute_count }
+    type: server.yaml
+  control:
+    depends_on:
+    - deploy_subnet
+    - neutron_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: control_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, first_network , hosts, control, name]}
+      firstnet_ip: { get_param: [ networks, first_network , hosts, control, ip]}
+      firstnet: {get_resource: deploy_net}
+      secondnet_ip: { get_param: [ networks, second_network , hosts, control, ip]}
+      secondnet: {get_resource: neutron_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+      compute_count: { get_param: compute_count }
+    type: server.yaml
+  deploy_net:
+    properties: {name: deploy_net}
+    type: OS::Neutron::Net
+  deploy_subnet:
+    properties:
+      cidr: { get_param: [ networks, first_network , cidr]}
+      network: {get_resource: deploy_net}
+      dns_nameservers: 
+        repeat:
+          for_each:
+            dns_server: { get_param: dns_servers }
+          template:
+            dns_server
+    type: OS::Neutron::Subnet
+  ext_router:
+    properties:
+      external_gateway_info: {network: { get_param: public_net }}
+    type: OS::Neutron::Router
+  ext_router_assignment:
+    properties:
+      router: {get_resource: ext_router}
+      subnet: {get_resource: deploy_subnet}
+    type: OS::Neutron::RouterInterface
+  keyname_random: {type: 'OS::Heat::RandomString'}
+  keypair:
+    properties:
+      name:
+        get_attr: [keyname_random, value]
+      save_private_key: true
+    type: OS::Nova::KeyPair
+  neutron_net:
+    properties: {name: neutron_net}
+    type: OS::Neutron::Net
+  neutron_subnet:
+    properties:
+      cidr: { get_param: [ networks, second_network, cidr ]}
+      gateway_ip: 0.0.0.0
+      network: {get_resource: neutron_net}
+    type: OS::Neutron::Subnet
+
+

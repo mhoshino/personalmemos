@@ -30,6 +30,7 @@ parameters:
     type: string
   compute_count:
     type: string
+  
 outputs:
   floating_ip_address:
     value:
@@ -110,6 +111,7 @@ resources:
               external_device: { get_param: [ networks, second_network, device]}
               wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
             template: |
+              
               set -x
               echo "control_ip  stacknamecontrol_hostname" >> /etc/hosts
               echo "contrail_ip stacknamecontrail_hostname" >> /etc/hosts

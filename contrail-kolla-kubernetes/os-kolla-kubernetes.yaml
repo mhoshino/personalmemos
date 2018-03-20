@@ -5,10 +5,10 @@ parameters:
     default: k8s_ctl_medium
   contrail_flavor:
     type: string
-    default: k8s_ctl_medium
+    default: oc_aio_medium
   compute_flavor:
     type: string
-    default: m1.medium
+    default: k8s_ctl_small
   image:
     type: string
     default: ubuntu-16-04-amd64-cloudimg
@@ -20,7 +20,7 @@ parameters:
     default: public
   compute_count:
     type: string
-    default: 3
+    default: 2
   dns_servers:
     type: comma_delimited_list
     label: dns_servers

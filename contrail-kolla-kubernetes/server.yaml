@@ -14,13 +14,9 @@ parameters:
     type: string
   key_name:
     type: string
-  firstnet:
+  deploy_net:
     type: string
-  firstnet_ip:
-    type: string
-  secondnet:
-    type: string
-  secondnet_ip:
+  deploy_netip:
     type: string
   networks:
     type: json
@@ -30,10 +26,30 @@ parameters:
     type: string
   compute_count:
     type: string
+  timeout:
+    type: string
+    default: 3600
+  gluster_device:
+    type: string
+    default: /dev/vdb
+  vol_size:
+    type: string
+    default: 50
+  compute:
+    type: boolean
+    default: true
+conditions:
+  ifCompute:
+    equals:
+     - get_param: compute
+     - true
 outputs:
   floating_ip_address:
     value:
       get_attr: [floating_ip, floating_ip_address]
+  server_id:
+    value:
+      get_resource: server
 resources:
   server:
     type: OS::Nova::Server
@@ -49,21 +65,15 @@ resources:
             stackname: { get_param: stackname }
             name: { get_param: name }
       networks: 
-      - port: { get_resource: firstnet_port }
-      - port: { get_resource: secondnet_port }
+      - port: { get_resource: deploy_netport }
       user_data: {get_resource: cloud_config}
       user_data_format: RAW
-  firstnet_port:
+  deploy_netport:
     properties:
-      network: {get_param: firstnet}
-      fixed_ips: [ {  "ip_address": { get_param: firstnet_ip } } ]
+      network: {get_param: deploy_net}
+      fixed_ips: [ {  "ip_address": { get_param: deploy_netip } } ]
       security_groups: 
       - { get_resource: security_group}      
-    type: OS::Neutron::Port
-  secondnet_port:
-    properties:
-      network: {get_param: secondnet}
-      fixed_ips: [ {  "ip_address": { get_param: secondnet_ip } } ]
     type: OS::Neutron::Port
   floating_ip:
     properties: {floating_network: { get_param: public_net }}
@@ -71,7 +81,7 @@ resources:
   floating_ip_asociate:
     properties:
       floatingip_id: {get_resource: floating_ip}
-      port_id: { get_resource: firstnet_port }
+      port_id: { get_resource: deploy_netport }
     type: OS::Neutron::FloatingIPAssociation
   security_group_random:
     type: OS::Heat::RandomString
@@ -87,179 +97,18 @@ resources:
   cloud_config:
     properties:
       parts:
+      - config: { get_resource: initial_config }
       - config: { get_resource: common_config }
+      - config: { get_resource: k8s_config }
+      - config: { get_resource: gluster_config }
+      - config: { get_resource: complete_config }
     type: OS::Heat::MultipartMime
-  common_config:
+  initial_config:
     properties:
       cloud_config:
         disable_root: 0
         package_upgrade: true
-        runcmd:
-        - str_replace:
-            params:
-              stackname: { get_param: stackname }
-              servercount: { get_param: compute_count }
-              control_hostname:   { get_param: [ networks, first_network , hosts, control, name]}
-              contrail_hostname:  { get_param: [ networks, first_network , hosts, contrail, name]}
-              compute_hostname:  { get_param: [ networks, first_network , hosts, compute, name]}
-              contrail_device: { get_param: [ networks, first_network , device]}
-              control_ip:  { get_param: [ networks, first_network , hosts, control, ip]}
-              contrail_ip: { get_param: [ networks, first_network , hosts, contrail, ip]}
-              compute_ip: { get_param: [ networks, first_network , hosts, compute, ipprefix]}
-              docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
-              external_device: { get_param: [ networks, second_network, device]}
-              wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
-            template: |
-              set -x
-              echo "control_ip  stacknamecontrol_hostname" >> /etc/hosts
-              echo "contrail_ip stacknamecontrail_hostname" >> /etc/hosts
-              ssh-keyscan localhost >> /root/.ssh/known_hosts
-              ssh-keyscan stacknamecontrol_hostname >> /root/.ssh/known_hosts
-              ssh-keyscan stacknamecontrail_hostname >> /root/.ssh/known_hosts
-              ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
-              ssh-keyscan control_ip >> /root/.ssh/known_hosts
-              ssh-keyscan contrail_ip >> /root/.ssh/known_hosts
-              i=0
-              computehosts_list=''
-              computeip_list=''
-              while true
-              do
-                 if [ $i -ge servercount ]
-                 then
-                   break
-                 fi
-                 echo "compute_ip$i stacknamecompute_hostname$i" >> /etc/hosts
-                 ssh-keyscan stacknamecompute_hostname$i >> /root/.ssh/known_hosts
-                 ssh-keyscan compute_ip$i >> /root/.ssh/known_hosts
-                 computehosts_list="${computehosts_list}stacknamecompute_hostname$i\n"
-                 computeip_list="${computeip_list}compute_ip$i\n"
-                 i=$((i+1))
-              done
-              apt-get install -y python docker docker.io
-              python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
-              systemctl restart docker
-              curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo -E apt-key add -
-              cat <<EOF > kubernetes.list
-              deb http://apt.kubernetes.io/ kubernetes-xenial main
-              EOF
-              sudo cp -aR kubernetes.list /etc/apt/sources.list.d/kubernetes.list
-              sudo apt-get update
-              sudo apt-get install -y docker.io kubelet kubeadm kubectl kubernetes-cni
-              CGROUP_DRIVER=$(sudo docker info | grep "Cgroup Driver" | awk '{print $3}')
-              sudo sed -i "s|KUBELET_KUBECONFIG_ARGS=|KUBELET_KUBECONFIG_ARGS=--cgroup-driver=$CGROUP_DRIVER |g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-              sudo sed -i 's/10.96.0.10/10.3.3.10/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-              sudo systemctl stop kubelet
-              sudo systemctl enable kubelet
-              sudo systemctl start kubelet
-              if [ `hostname` = "stacknamecontrol_hostname" ]
-              then
-                apt-get install -y git python-pip sshpass python-oslo-config python-dev libffi-dev gcc libssl-dev qemu-kvm
-                pip install -U pip
-                pip install -U ansible
-                pip install python-openstackclient
-                pip install  pyOpenSSL==16.2.0
-                git clone https://github.com/gokulpch/OpenContrail-Kolla
-                cp -p OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
-                sed -i 's/network_interface: "ens3"/network_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
-                sed -i 's/neutron_external_interface: "ens4"/network_external_interface: "contrail_device"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
-                sed -i 's/kolla_internal_vip_address: "10.87.1.49"/kolla_internal_vip_address: "control_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
-                sed -i 's/contrail_api_interface_address: "10.87.1.49"/contrail_api_interface_address: "contrail_ip"/g' OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml
-                diff OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml OpenContrail-Kolla/kolla-ansible/etc/kolla/globals.yml.org
-                cp -p OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
-                sed -i 's/1ocata/stacknamecontrol_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
-                sed -i 's/ocata1/stacknamecontrol_hostname/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
-                sed -i 's/ocata2/'"${computehosts_list}"'/g' OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode
-                diff OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode OpenContrail-Kolla/kolla-ansible/ansible/inventory/multinode.org
-                cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
-                sed -i '/^.contrail-controllers.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                sed -i '/^.contrail-analyticsdb.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                sed -i '/^.contrail-analytics.$/{n;s/.*/contrail_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                sed -i '/^.contrail-compute.$/{n;s/.*/'"${computeip_list}"'/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                sed -i '/^.openstack-controllers.$/{n;s/.*/control_ip/g}' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts
-                diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/hosts OpenContrail-Kolla/contrail-ansible/playbooks/inventory/hosts.org
-                cp -p OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org
-                sed -i 's/global_config: { external_rabbitmq_servers: 10.87.1.49 }/global_config: { external_rabbitmq_servers: control_ip }/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
-                sed -i 's/keystone_config: {ip: 10.87.1.49, admin_password: contrail1, auth_protocol: http}/keystone_config: {ip: control_ip, admin_password: contrail1, auth_protocol: http}/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
-                sed -i 's/vrouter_physical_interface: ens3/vrouter_physical_interface: contrail_device/g' OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml
-                diff OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml OpenContrail-Kolla/contrail-ansible/playbooks/inventory/my-inventory/group_vars/all.yml.org
-                echo 'export OS_USERNAME=admin
-              export OS_PASSWORD=contrail1
-              export OS_PROJECT_NAME=admin
-              export OS_USER_DOMAIN_NAME=Default
-              export OS_PROJECT_DOMAIN_NAME=Default
-              export OS_AUTH_URL=http://control_ip:35357/v3
-              export OS_IDENTITY_API_VERSION=3
-              export OS_IMAGE_API_VERSION=2' > /root/openstackrc
-                 
-                git clone https://github.com/openstack/kolla-ansible
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/roles/neutron/handlers/main.yml /kolla-ansible/ansible/roles/neutron/handlers/main.yml
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/roles/neutron/tasks/config.yml /kolla-ansible/ansible/roles/neutron/tasks/config.yml
-                cp -rfp /OpenContrail-Kolla/kolla-ansible/ansible/roles/neutron/templates/* /kolla-ansible/ansible/roles/neutron/templates/
-                sed -i '/^kolla_base_distro/d;/^openstack_release/d;/^kolla_internal_vip_address/d;/^enable_haproxy/d;/^network_interface/d;/^nova_compute_image_full/d;/^neutron_server_image_full/d;/^neutron_server_image_full/d;/^enable_neutron_opencontrail/d;/^enable_neutron_opencontrail/d;/^contrail_api_interface_address/d;/^neutron_external_interface/d' /kolla-ansible/etc/kolla/globals.yml
-                echo 'kolla_base_distro: "ubuntu"
-              openstack_release: "ocata"
-              kolla_internal_vip_address: "control_ip"
-              enable_haproxy: "no"
-              network_interface: "contrail_device"
-              nova_compute_image_full: "gokulpch/ubuntu-binary-nova-compute:5.0.0"
-              neutron_server_image_full: "gokulpch/ubuntu-binary-neutron-server:5.0.0"
-              enable_neutron_opencontrail: "yes"
-              contrail_api_interface_address: "contrail_ip"
-              neutron_external_interface: "external_device"' >> /kolla-ansible/etc/kolla/globals.yml
-                sed -i 's/password:/password: contrail1/g' /kolla-ansible/etc/kolla/passwords.yml 
-                find /kolla-ansible/ -type f | xargs sed -i 's/memcache_security_strategy = ENCRYPT/memcache_security_strategy = NONE/g'
-                find /kolla-ansible/ -type f | xargs sed -i 's/docker-engine=1.12/docker-engine=1.13/'
-                perl -i -p0e 's/control01\ncontrol02\ncontrol03/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
-                perl -i -p0e 's/network01\nnetwork02/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
-                sed -i 's/^storage01/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
-                sed -i 's/^monitoring01/stacknamecontrol_hostname/g' /kolla-ansible/ansible/inventory/multinode
-                sed -i 's/^compute01/'"${computehosts_list}"'/g' /kolla-ansible/ansible/inventory/multinode
-                echo 'orchestration_engine: "ANSIBLE"' >> /kolla-ansible/ansible/group_vars/all.yml
-
-                sudo kubeadm init --pod-network-cidr=10.1.0.0/16 --service-cidr=10.3.3.0/24
-                mkdir -p /root/.kube
-                sudo -H cp /etc/kubernetes/admin.conf /root/.kube/config
-                sudo -H chown $(id -u):$(id -g) /root/.kube/config
-                curl -L https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/rbac.yaml -o rbac.yaml
-                kubectl --kubeconfig="/root/.kube/config" apply -f rbac.yaml
-                curl -L https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/canal.yaml -o canal.yaml
-                sed -i "s@10.244.0.0/16@10.1.0.0/16@" canal.yaml
-                kubectl --kubeconfig="/root/.kube/config" apply -f canal.yaml
-                kubectl --kubeconfig="/root/.kube/config" taint nodes --all=true  node-role.kubernetes.io/master:NoSchedule- 
-
-              echo 'apiVersion: rbac.authorization.k8s.io/v1
-              kind: ClusterRoleBinding
-              metadata:
-                name: cluster-admin
-              roleRef:
-                apiGroup: rbac.authorization.k8s.io
-                kind: ClusterRole
-                name: cluster-admin
-              subjects:
-              - kind: Group
-                name: system:masters
-              - kind: Group
-                name: system:authenticated
-              - kind: Group
-                name: system:unauthenticated' > role.yaml
-                kubectl --kubeconfig="/root/.kube/config" replace -f role.yaml
-                
-                kubectl --kubeconfig="/root/.kube/config" create namespace kolla                
-                kubectl --kubeconfig="/root/.kube/config" label node $(hostname) kolla_controller=true
-
-                curl -L https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
-                chmod 700 get_helm.sh
-                ./get_helm.sh
-                
-                git clone http://github.com/openstack/kolla-kubernetes
-                sudo pip install -U /kolla-ansible/
-                sudo pip install -U /kolla-kubernetes/ 
-                sudo cp -aR /kolla-ansible/etc/kolla /etc
-                echo 'orchestration_engine: KUBERNETES' >> /etc/kolla/globals.yml
-                sudo cp -aR /kolla-kubernetes/etc/kolla-kubernetes /etc
-                /kolla-kubernetes/tools/secret-generator.py create
-              fi
-              wc_notify --data-binary '{"status": "SUCCESS"}'
+        run_cmd : []
         write_files:
         - path: /root/.ssh/id_rsa
           permissions: 0600
@@ -270,11 +119,87 @@ resources:
           content:
             get_param: public_key
     type: OS::Heat::CloudConfig
+  common_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            stackname: { get_param: stackname }
+            servercount: { get_param: compute_count }
+            control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
+            contrail_hostname:  { get_param: [ networks, deploy_net , hosts, contrail, name]}
+            compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
+            contrail_device: { get_param: [ networks, deploy_net , device]}
+            control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
+            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
+            compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+            docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
+          template: 
+            get_file: common.sh 
+    type: OS::Heat::SoftwareConfig
+  k8s_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            stackname: { get_param: stackname }
+            servercount: { get_param: compute_count }
+            control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
+            contrail_hostname:  { get_param: [ networks, deploy_net , hosts, contrail, name]}
+            compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
+            contrail_device: { get_param: [ networks, deploy_net , device]}
+            control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
+            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
+            compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+            docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
+          template:
+            get_file: k8s.sh
+    type: OS::Heat::SoftwareConfig
+  gluster_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            stackname: { get_param: stackname }
+            servercount: { get_param: compute_count }
+            control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
+            contrail_hostname:  { get_param: [ networks, deploy_net , hosts, contrail, name]}
+            compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
+            contrail_device: { get_param: [ networks, deploy_net , device]}
+            control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
+            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
+            compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+            docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
+            gluster_device: { get_param: gluster_device }
+          template:
+            get_file: gluster.sh
+    type: OS::Heat::SoftwareConfig
+  complete_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
+          template: | 
+            !/bin/sh
+            wc_notify --data-binary '{"status": "SUCCESS"}'
+    type: OS::Heat::SoftwareConfig
   wait_condition:
     type: OS::Heat::WaitCondition
     properties:
       handle: {get_resource: wait_handle}
-      timeout: 1200
+      timeout: { get_param: timeout }
   wait_handle:
     type: OS::Heat::WaitConditionHandle
+  vol:
+    type: OS::Cinder::Volume
+    condition: ifCompute
+    properties:
+     size: { get_param: vol_size }
+  vol_attach:
+    type: OS::Cinder::VolumeAttachment
+    condition: ifCompute
+    properties:
+      instance_uuid: { get_resource: server }
+      volume_id: { get_resource: vol }
 

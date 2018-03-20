@@ -2,10 +2,10 @@ heat_template_version: '2017-02-24'
 parameters:
   control_flavor:
     type: string
-    default: os_ha_ctl
+    default: m1.medium80
   contrail_flavor:
     type: string
-    default: oc_aio_medium
+    default: m1.medium80
   compute_flavor:
     type: string
     default: os_cmp_small

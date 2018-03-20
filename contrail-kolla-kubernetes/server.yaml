@@ -31,7 +31,7 @@ parameters:
     default: 3600
   gluster_device:
     type: string
-    default: /dev/vdb
+    default: /dev/vdc
   vol_size:
     type: string
     default: 50
@@ -127,11 +127,8 @@ resources:
             stackname: { get_param: stackname }
             servercount: { get_param: compute_count }
             control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
-            contrail_hostname:  { get_param: [ networks, deploy_net , hosts, contrail, name]}
             compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
-            contrail_device: { get_param: [ networks, deploy_net , device]}
             control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
-            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
             compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
             docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
           template: 
@@ -145,13 +142,10 @@ resources:
             stackname: { get_param: stackname }
             servercount: { get_param: compute_count }
             control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
-            contrail_hostname:  { get_param: [ networks, deploy_net , hosts, contrail, name]}
             compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
-            contrail_device: { get_param: [ networks, deploy_net , device]}
             control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
-            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
             compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
-            docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
+            external_device: { get_param: [ networks, deploy_net , device]}
           template:
             get_file: k8s.sh
     type: OS::Heat::SoftwareConfig
@@ -163,13 +157,9 @@ resources:
             stackname: { get_param: stackname }
             servercount: { get_param: compute_count }
             control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
-            contrail_hostname:  { get_param: [ networks, deploy_net , hosts, contrail, name]}
             compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
-            contrail_device: { get_param: [ networks, deploy_net , device]}
             control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
-            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
             compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
-            docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
             gluster_device: { get_param: gluster_device }
           template:
             get_file: gluster.sh

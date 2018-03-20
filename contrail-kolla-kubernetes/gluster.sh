@@ -12,18 +12,12 @@ do
    then
      break
    fi
-   kubectl label node stacknamecompute_hostname${i} storagenode=glusterfs
+   kubectl --kubeconfig /etc/kubernetes/admin.conf label node stacknamecompute_hostname${i} storagenode=glusterfs
    i=$((i+1))
 done
-HEKETI_BIN="heketi-cli"      # heketi or heketi-cli
-HEKETI_VERSION="6.0.0"       # latest heketi version => https://github.com/heketi/heketi/releases
-HEKETI_OS="linux"            # linux or darwin
-
-
-unset HEKETI_BIN HEKETI_VERSION HEKETI_OS
 
 git clone https://github.com/heketi/heketi
-( cd heketi/extras/kubernetes; kubectl create -f glusterfs-daemonset.json ; kubectl create -f heketi-service-account.json; kubectl create clusterrolebinding heketi-gluster-admin --clusterrole=edit --serviceaccount=default:heketi-service-account; kubectl create secret generic heketi-config-secret --from-file=./heketi.json; kubectl create -f heketi-bootstrap.json )
+( cd heketi/extras/kubernetes; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f glusterfs-daemonset.json ; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-service-account.json; kubectl --kubeconfig /etc/kubernetes/admin.conf create clusterrolebinding heketi-gluster-admin --clusterrole=edit --serviceaccount=default:heketi-service-account; kubectl --kubeconfig /etc/kubernetes/admin.conf create secret generic heketi-config-secret --from-file=./heketi.json; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-bootstrap.json )
 
 
 
@@ -38,8 +32,8 @@ rm -vrf /tmp/heketi && \
 cd /usr/local/bin && \
 ln -vsnf ${HEKETI_BIN}_${HEKETI_VERSION} ${HEKETI_BIN} && cd
 
-HEKETI_IP=`kubectl get services deploy-heketi -o json | jq .spec.clusterIP -r`
-HEKETI_PORT=`kubectl get services deploy-heketi -o json | jq .spec.ports[0].port -r`
+HEKETI_IP=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services deploy-heketi -o json | jq .spec.clusterIP -r`
+HEKETI_PORT=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services deploy-heketi -o json | jq .spec.ports[0].port -r`
 export HEKETI_CLI_SERVER=http://${HEKETI_IP}:${HEKETI_PORT}
 python -c 'import json
 obj={}
@@ -64,8 +58,8 @@ for i in range(0,servercount):
   obj["clusters"][0]["nodes"][i]["devices"].append(0)
   obj["clusters"][0]["nodes"][i]["devices"][0]="gluster_device"
 print(json.dumps(obj))' > gluster_top.json
-
-heketi-cli topology load --json=gluster_top.json
+sleep 120
+heketi-cli topology load --json=gluster_top.json || exit 0
 fi
 
 

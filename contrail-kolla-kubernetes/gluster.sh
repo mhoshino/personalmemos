@@ -1,8 +1,12 @@
 #!/bin/sh
 set -x
+apt-get install -y glusterfs-client
+modprobe dm_thin_pool
+echo dm_thin_pool >> /etc/modules
 
 if [ `hostname` = "stacknamecontrol_hostname" ]
 then
+apt-get install -y jq
 i=0
 whereis kubectl || exit 1
 
@@ -32,6 +36,7 @@ rm -vrf /tmp/heketi && \
 cd /usr/local/bin && \
 ln -vsnf ${HEKETI_BIN}_${HEKETI_VERSION} ${HEKETI_BIN} && cd
 
+cd /
 HEKETI_IP=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services deploy-heketi -o json | jq .spec.clusterIP -r`
 HEKETI_PORT=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services deploy-heketi -o json | jq .spec.ports[0].port -r`
 export HEKETI_CLI_SERVER=http://${HEKETI_IP}:${HEKETI_PORT}
@@ -58,8 +63,28 @@ for i in range(0,servercount):
   obj["clusters"][0]["nodes"][i]["devices"].append(0)
   obj["clusters"][0]["nodes"][i]["devices"][0]="gluster_device"
 print(json.dumps(obj))' > gluster_top.json
-sleep 120
+sleep 60
 heketi-cli topology load --json=gluster_top.json || exit 0
+heketi-cli setup-openshift-heketi-storage
+kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-storage.json
+sleep 60
+kubectl --kubeconfig /etc/kubernetes/admin.conf get jobs
+kubectl --kubeconfig /etc/kubernetes/admin.conf delete all,service,jobs,deployment,secret --selector="deploy-heketi"
+( cd heketi/extras/kubernetes; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-deployment.json )
+
+HEKETI_IP=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services heketi -o json | jq .spec.clusterIP -r`
+HEKETI_PORT=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services heketi -o json | jq .spec.ports[0].port -r`
+export HEKETI_CLI_SERVER=http://${HEKETI_IP}:${HEKETI_PORT}
+echo "
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: generic
+provisioner: kubernetes.io/glusterfs
+parameters:
+  resturl: ${HEKETI_CLI_SERVER}" > storage-class.yml
+kubectl --kubeconfig /etc/kubernetes/admin.conf create -f storage-class.yml
+    
 fi
 
 

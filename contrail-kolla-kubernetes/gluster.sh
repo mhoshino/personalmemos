@@ -6,6 +6,11 @@ echo dm_thin_pool >> /etc/modules
 
 if [ `hostname` = "stacknamecontrol_hostname" ]
 then
+cp /etc/kubernetes/admin.conf /kube-gluster.conf
+export KUBECTL="kubectl --kubeconfig /kube-gluster.conf"
+${KUBECTL} create namespace gluster
+${KUBECTL} config set-context gluster --cluster=kubernetes --user=kubernetes-admin --namespace=gluster
+${KUBECTL} config use-context gluster
 apt-get install -y jq
 i=0
 whereis kubectl || exit 1
@@ -16,12 +21,12 @@ do
    then
      break
    fi
-   kubectl --kubeconfig /etc/kubernetes/admin.conf label node stacknamecompute_hostname${i} storagenode=glusterfs
+   ${KUBECTL} label node stacknamecompute_hostname${i} storagenode=glusterfs
    i=$((i+1))
 done
 
 git clone https://github.com/heketi/heketi
-( cd heketi/extras/kubernetes; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f glusterfs-daemonset.json ; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-service-account.json; kubectl --kubeconfig /etc/kubernetes/admin.conf create clusterrolebinding heketi-gluster-admin --clusterrole=edit --serviceaccount=default:heketi-service-account; kubectl --kubeconfig /etc/kubernetes/admin.conf create secret generic heketi-config-secret --from-file=./heketi.json; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-bootstrap.json )
+( cd heketi/extras/kubernetes; ${KUBECTL} create -f glusterfs-daemonset.json ; ${KUBECTL} create -f heketi-service-account.json; ${KUBECTL} create clusterrolebinding heketi-gluster-admin --clusterrole=edit --serviceaccount=default:heketi-service-account; ${KUBECTL} create secret generic heketi-config-secret --from-file=./heketi.json; ${KUBECTL} create -f heketi-bootstrap.json )
 
 
 
@@ -37,8 +42,8 @@ cd /usr/local/bin && \
 ln -vsnf ${HEKETI_BIN}_${HEKETI_VERSION} ${HEKETI_BIN} && cd
 
 cd /
-HEKETI_IP=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services deploy-heketi -o json | jq .spec.clusterIP -r`
-HEKETI_PORT=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services deploy-heketi -o json | jq .spec.ports[0].port -r`
+HEKETI_IP=`${KUBECTL} get services deploy-heketi -o json | jq .spec.clusterIP -r`
+HEKETI_PORT=`${KUBECTL} get services deploy-heketi -o json | jq .spec.ports[0].port -r`
 export HEKETI_CLI_SERVER=http://${HEKETI_IP}:${HEKETI_PORT}
 python -c 'import json
 obj={}
@@ -66,24 +71,24 @@ print(json.dumps(obj))' > gluster_top.json
 sleep 60
 heketi-cli topology load --json=gluster_top.json || exit 0
 heketi-cli setup-openshift-heketi-storage
-kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-storage.json
+${KUBECTL} create -f heketi-storage.json
 sleep 60
-kubectl --kubeconfig /etc/kubernetes/admin.conf get jobs
-kubectl --kubeconfig /etc/kubernetes/admin.conf delete all,service,jobs,deployment,secret --selector="deploy-heketi"
-( cd heketi/extras/kubernetes; kubectl --kubeconfig /etc/kubernetes/admin.conf create -f heketi-deployment.json )
+${KUBECTL} get jobs
+${KUBECTL} delete all,service,jobs,deployment,secret --selector="deploy-heketi"
+( cd heketi/extras/kubernetes; ${KUBECTL} create -f heketi-deployment.json )
 
-HEKETI_IP=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services heketi -o json | jq .spec.clusterIP -r`
-HEKETI_PORT=`kubectl --kubeconfig /etc/kubernetes/admin.conf get services heketi -o json | jq .spec.ports[0].port -r`
+HEKETI_IP=`${KUBECTL} get services heketi -o json | jq .spec.clusterIP -r`
+HEKETI_PORT=`${KUBECTL} get services heketi -o json | jq .spec.ports[0].port -r`
 export HEKETI_CLI_SERVER=http://${HEKETI_IP}:${HEKETI_PORT}
 echo "
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: generic
+  name: general
 provisioner: kubernetes.io/glusterfs
 parameters:
   resturl: ${HEKETI_CLI_SERVER}" > storage-class.yml
-kubectl --kubeconfig /etc/kubernetes/admin.conf create -f storage-class.yml
+${KUBECTL} create -f storage-class.yml
     
 fi
 

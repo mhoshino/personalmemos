@@ -20,6 +20,3 @@ done
 apt-get install -y python docker docker.io
 python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
 systemctl restart docker
-apt-get install --no-install-recommends -y git
-git clone https://git.openstack.org/openstack/openstack-helm-infra.git /opt/openstack-helm-infra
-git clone https://git.openstack.org/openstack/openstack-helm.git /opt/openstack-helm

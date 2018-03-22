@@ -101,6 +101,7 @@ resources:
       - config: { get_resource: common_config }
       - config: { get_resource: k8s_config }
       - config: { get_resource: gluster_config }
+      - config: { get_resource: helm_config }
       - config: { get_resource: complete_config }
     type: OS::Heat::MultipartMime
   initial_config:
@@ -164,6 +165,20 @@ resources:
           template:
             get_file: gluster.sh
     type: OS::Heat::SoftwareConfig
+  helm_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            stackname: { get_param: stackname }
+            servercount: { get_param: compute_count }
+            control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
+            compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
+            control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
+            compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+          template:
+            get_file: helm.sh
+    type: OS::Heat::SoftwareConfig
   complete_config:
     properties:
       config:
@@ -171,7 +186,8 @@ resources:
           params:
             wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
           template: | 
-            !/bin/sh
+            #!/bin/sh
+            set -x
             wc_notify --data-binary '{"status": "SUCCESS"}'
     type: OS::Heat::SoftwareConfig
   wait_condition:

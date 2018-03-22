@@ -17,7 +17,7 @@ whereis kubectl || exit 1
 
 while true
 do
-   if [ $i -ge servercount ]
+   if [ $i -ge computecount ]
    then
      break
    fi
@@ -52,7 +52,7 @@ obj["clusters"].append(0)
 obj["clusters"][0]={}
 obj["clusters"][0]["nodes"]=[]
 
-for i in range(0,servercount):
+for i in range(0,computecount):
   obj["clusters"][0]["nodes"].append(i)
   obj["clusters"][0]["nodes"][i]={}
   obj["clusters"][0]["nodes"][i]["node"]={}

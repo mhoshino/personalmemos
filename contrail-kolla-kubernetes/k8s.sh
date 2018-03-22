@@ -50,7 +50,7 @@ subjects:
   i=0
   while true
   do
-     if [ $i -ge servercount ]
+     if [ $i -ge computecount ]
      then
        break
      fi

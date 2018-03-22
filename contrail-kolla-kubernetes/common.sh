@@ -8,7 +8,7 @@ ssh-keyscan control_ip >> /root/.ssh/known_hosts
 i=0
 while true
 do
-   if [ $i -ge servercount ]
+   if [ $i -ge computecount ]
    then
      break
    fi

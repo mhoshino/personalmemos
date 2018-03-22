@@ -21,6 +21,7 @@ do
 done
 
 git clone https://git.openstack.org/openstack/openstack-helm.git /opt/openstack-helm
-/opt/openstack-helm/tools/deployment/multinode/010-setup-client.sh
+cd /opt/openstack-helm/
+./tools/deployment/multinode/010-setup-client.sh
     
 fi

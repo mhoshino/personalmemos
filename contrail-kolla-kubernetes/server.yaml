@@ -100,8 +100,10 @@ resources:
       - config: { get_resource: initial_config }
       - config: { get_resource: common_config }
       - config: { get_resource: k8s_config }
+      - config: { get_resource: canal_config }
       - config: { get_resource: gluster_config }
       - config: { get_resource: helm_config }
+      - config: { get_resource: contrail_config }
       - config: { get_resource: openstackhelm_config }
       - config: { get_resource: complete_config }
     type: OS::Heat::MultipartMime
@@ -150,6 +152,34 @@ resources:
             external_device: { get_param: [ networks, deploy_net , device]}
           template:
             get_file: k8s.sh
+    type: OS::Heat::SoftwareConfig
+  contrail_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            stackname: { get_param: stackname }
+            computecount: { get_param: compute_count }
+            control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
+            compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
+            control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
+            compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+          template:
+            get_file: contrail.sh
+    type: OS::Heat::SoftwareConfig
+  canal_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            stackname: { get_param: stackname }
+            computecount: { get_param: compute_count }
+            control_hostname:   { get_param: [ networks, deploy_net , hosts, control, name]}
+            compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
+            control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
+            compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+          template:
+            get_file: canal.sh
     type: OS::Heat::SoftwareConfig
   gluster_config:
     properties:

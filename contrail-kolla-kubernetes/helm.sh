@@ -3,7 +3,7 @@ set -x
 if [ `hostname` = "stacknamecontrol_hostname" ]
 then
 	curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-	ssh localhost helm init --client-only
+	ssh localhost helm init
 	echo "
 [Unit]
 Description=Helm Server

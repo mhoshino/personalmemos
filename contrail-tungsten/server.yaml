@@ -1,0 +1,136 @@
+heat_template_version: '2017-02-24'
+parameters:
+  stackname:
+    type: string
+  name:
+    type: string
+  flavor:
+    type: string
+  image:
+    type: string
+  availability_zone:
+    type: string
+  public_net:
+    type: string
+  key_name:
+    type: string
+  devnet:
+    type: string
+  devnet_ip:
+    type: string
+  networks:
+    type: json
+  public_key:
+    type: string
+  private_key:
+    type: string
+  compute_count:
+    type: string
+outputs:
+  floating_ip_address:
+    value:
+      get_attr: [floating_ip, floating_ip_address]
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: flavor}
+      image: { get_param: image}
+      key_name: {get_param: key_name}
+      name: 
+        str_replace:
+          template: stacknamename
+          params:
+            stackname: { get_param: stackname }
+            name: { get_param: name }
+      networks: 
+      - port: { get_resource: devnet_port }
+      user_data: {get_resource: cloud_config}
+      user_data_format: RAW
+  devnet_port:
+    properties:
+      network: {get_param: devnet}
+      fixed_ips: [ {  "ip_address": { get_param: devnet_ip } } ]
+      security_groups: 
+      - { get_resource: security_group}      
+    type: OS::Neutron::Port
+  floating_ip:
+    properties: {floating_network: { get_param: public_net }}
+    type: OS::Neutron::FloatingIP
+  floating_ip_asociate:
+    properties:
+      floatingip_id: {get_resource: floating_ip}
+      port_id: { get_resource: devnet_port }
+    type: OS::Neutron::FloatingIPAssociation
+  security_group_random:
+    type: OS::Heat::RandomString
+  security_group:
+    properties:
+      name:
+        get_attr: [security_group_random, value]
+      rules:
+      - {port_range_max: 65535, port_range_min: 0, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 65535, port_range_min: 0, protocol: udp, remote_ip_prefix: 0.0.0.0/0}
+      - {protocol: icmp, remote_ip_prefix: 0.0.0.0/0}
+    type: OS::Neutron::SecurityGroup
+  cloud_config:
+    properties:
+      parts:
+      - config: { get_resource: initial_config }
+      - config: { get_resource: common_config }
+      - config: { get_resource: complete_config }
+    type: OS::Heat::MultipartMime
+  initial_config:
+    properties:
+      cloud_config:
+        disable_root: 0
+        package_upgrade: true
+        run_cmd : []
+        write_files:
+        - path: /root/.ssh/id_rsa
+          permissions: 0600
+          content:
+            get_param: private_key
+        - path: /root/.ssh/authorized_keys
+          permissions: 0600
+          content:
+            get_param: public_key
+    type: OS::Heat::CloudConfig
+  common_config:
+    properties:
+      config:
+        str_replace:
+          params:
+              stackname: { get_param: stackname }
+              servercount: { get_param: compute_count }
+              control_hostname:   { get_param: [ networks, dev_network , hosts, control, name]}
+              contrail_hostname:  { get_param: [ networks, dev_network , hosts, contrail, name]}
+              compute_hostname:  { get_param: [ networks, dev_network , hosts, compute, name]}
+              contrail_device: { get_param: [ networks, dev_network , device]}
+              control_ip:  { get_param: [ networks, dev_network , hosts, control, ip]}
+              contrail_ip: { get_param: [ networks, dev_network , hosts, contrail, ip]}
+              compute_ip: { get_param: [ networks, dev_network , hosts, compute, ipprefix]}
+              docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
+          template:
+            get_file: common.sh
+    type: OS::Heat::SoftwareConfig
+  complete_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
+          template: |
+            #!/bin/sh
+            set -x
+            wc_notify --data-binary '{"status": "SUCCESS"}'
+            shutdown -r now
+    type: OS::Heat::SoftwareConfig
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: {get_resource: wait_handle}
+      timeout: 1200
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle

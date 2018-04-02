@@ -21,7 +21,7 @@ root@mhoshicontrol:/etc/kolla/heat-engin# vi heat.conf
 vi heat.conf
 [DEFAULT]
 ...
-plugin_dirs = /etc/heat/plugin
+plugin_dirs = /usr/lib/python2.7/dist-packages/vnc_api/gen/heat/resources
 
 [clients_contrail]
 user = admin
@@ -29,44 +29,6 @@ password = contrail1
 tenant = admin
 api_server = 192.168.0.11
 api_base_url = /
-root@mhoshicontrol:/etc/kolla/heat-engine# vi config.json
-{
-    "command": "heat-engine",
-    "config_files": [
-        {
-            "source": "/var/lib/kolla/config_files/heat.conf",
-            "dest": "/etc/heat/heat.conf",
-            "owner": "heat",
-            "perm": "0600"
-        },
-        {
-            "source": "/var/lib/kolla/config_files/_deprecated.yaml",
-            "dest": "/etc/heat/environment.d/_deprecated.yaml",
-            "owner": "heat",
-            "perm": "0600"
-        },
-        {
-            "source": "/var/lib/kolla/config_files/plugin",
-            "dest": "/etc/heat/plugin",
-            "owner": "heat",
-            "perm": "0600"
-        }    ],
-    "permissions": [
-        {
-            "path": "/var/log/kolla/heat",
-            "owner": "heat:heat",
-            "recurse": true
-        }
-    ]
-}
-```
-## Make the plugin dirs
-```
-root@mhoshicontrol:/etc/kolla/heat-engine# mkdir /etc/kolla/heat-engine/plugin
-```
-## Move the artifacts to plugin dir
-```
-root@mhoshicontrol:/etc/kolla/heat-engine# mv ~/contrail-heat/contrail-heat/resources/* /etc/kolla/heat-engine/plugin
 ```
 ## Restart heat_api container
 ```

@@ -72,3 +72,21 @@ root@mhoshicontrol:/etc/kolla/heat-engine# mv ~/contrail-heat/contrail-heat/reso
 ```
 docker restart heat_engine
 ```
+## Verify installation
+```
+root@mhoshicontrol:/etc/kolla/heat-engine# heat resource-type-list | grep -i contrail
+WARNING (shell) "heat resource-type-list" is deprecated, please use "openstack orchestration resource type list" instead
+| OS::Contrail::AttachPolicy               |
+| OS::Contrail::NetworkIpam                |
+| OS::Contrail::NetworkPolicy              |
+| OS::Contrail::PhysicalInterface          |
+| OS::Contrail::PhysicalRouter             |
+| OS::Contrail::PortTuple                  |
+| OS::Contrail::RouteTable                 |
+| OS::Contrail::ServiceHealthCheck         |
+| OS::Contrail::ServiceInstance            |
+| OS::Contrail::ServiceTemplate            |
+| OS::Contrail::VirtualMachineInterface    |
+| OS::Contrail::VirtualNetwork             |
+| OS::Contrail::VnSubnet                   |
+```

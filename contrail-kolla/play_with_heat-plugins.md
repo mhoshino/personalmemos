@@ -1,8 +1,4 @@
 # Play with Heat plugins
-## Clone the contrai-heat repo
-```
-git clone https://github.com/Juniper/contrail-heat
-```
 ## Get necessary python libraries from neturon-server container
 ```
 docker cp neutron_server:/usr/lib/python2.7/dist-packages/vnc_api ~/

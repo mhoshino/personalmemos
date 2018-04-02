@@ -1,17 +1,74 @@
-# Play with plugins
+# Play with Heat plugins
 ## Clone the contrai-heat repo
 ```
 git clone https://github.com/Juniper/contrail-heat
 ```
+## Get necessary python libraries from neturon-server container
+```
+docker cp neutron_server:/usr/lib/python2.7/dist-packages/vnc_api ~/
+docker cp neutron_server:/usr/lib/python2.7/dist-packages/vnc_api-0.1.dev0.egg-info ~/
+docker cp neutron_server:/usr/lib/python2.7/dist-packages/cfgm_common ~/
+docker cp neutron_server:/usr/lib/python2.7/dist-packages/cfgm_common-0.1.dev0.egg-info ~/
+docker cp ~/vnc_api heat_engine:/usr/lib/python2.7/dist-packages/vnc_api
+docker cp ~/vnc_api-0.1.dev0.egg-info heat_engine:/usr/lib/python2.7/dist-packages/vnc_api-0.1.dev0.egg-info
+docker cp ~/cfgm_common heat_engine:/usr/lib/python2.7/dist-packages/cfgm_common
+docker cp ~/cfgm_common-0.1.dev0.egg-info heat_engine:/usr/lib/python2.7/dist-packages/cfgm_common-0.1.dev0.egg-info
+```
 ## modify heat.conf on controller node
 ```
-root@mhoshicontrol:~# cd /etc/kolla/heat-api
-root@mhoshicontrol:/etc/kolla/heat-api# diff heat.conf heat.conf.org
-14d13
-< plugin_dirs = /var/lib/kolla/config_files/plugin
+root@mhoshicontrol:~# cd /etc/kolla/heat-engine
+root@mhoshicontrol:/etc/kolla/heat-engin# vi heat.conf
+vi heat.conf
+[DEFAULT]
+...
+plugin_dirs = /etc/heat/plugin
+
+[clients_contrail]
+user = admin
+password = contrail1
+tenant = admin
+api_server = 192.168.0.11
+api_base_url = /
+root@mhoshicontrol:/etc/kolla/heat-engine# vi config.json
+{
+    "command": "heat-engine",
+    "config_files": [
+        {
+            "source": "/var/lib/kolla/config_files/heat.conf",
+            "dest": "/etc/heat/heat.conf",
+            "owner": "heat",
+            "perm": "0600"
+        },
+        {
+            "source": "/var/lib/kolla/config_files/_deprecated.yaml",
+            "dest": "/etc/heat/environment.d/_deprecated.yaml",
+            "owner": "heat",
+            "perm": "0600"
+        },
+        {
+            "source": "/var/lib/kolla/config_files/plugin",
+            "dest": "/etc/heat/plugin",
+            "owner": "heat",
+            "perm": "0600"
+        }    ],
+    "permissions": [
+        {
+            "path": "/var/log/kolla/heat",
+            "owner": "heat:heat",
+            "recurse": true
+        }
+    ]
+}
 ```
 ## Make the plugin dirs
 ```
-root@mhoshicontrol:/etc/kolla/heat-api# mkdir /etc/kolla/heat-api/plugin
+root@mhoshicontrol:/etc/kolla/heat-engine# mkdir /etc/kolla/heat-engine/plugin
 ```
-
+## Move the artifacts to plugin dir
+```
+root@mhoshicontrol:/etc/kolla/heat-engine# mv ~/contrail-heat/contrail-heat/resources/* /etc/kolla/heat-engine/plugin
+```
+## Restart heat_api container
+```
+docker restart heat_engine
+```

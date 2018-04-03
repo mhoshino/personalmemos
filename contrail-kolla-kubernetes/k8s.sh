@@ -9,13 +9,12 @@ sudo apt-get update
 sudo apt-get install -y docker.io kubelet kubeadm kubectl kubernetes-cni
 CGROUP_DRIVER=$(sudo docker info | grep "Cgroup Driver" | awk '{print $3}')
 sudo sed -i "s|KUBELET_KUBECONFIG_ARGS=|KUBELET_KUBECONFIG_ARGS=--cgroup-driver=$CGROUP_DRIVER |g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-sudo sed -i 's/10.96.0.10/10.3.3.10/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 sudo systemctl stop kubelet
 sudo systemctl enable kubelet
 sudo systemctl start kubelet
 if [ `hostname` = "stacknamecontrol_hostname" ]
 then
-  sudo kubeadm init --pod-network-cidr=10.1.0.0/16 --service-cidr=10.3.3.0/24
+  sudo kubeadm init 
   mkdir -p /root/.kube
   sudo -H cp /etc/kubernetes/admin.conf /root/.kube/config
   sudo -H chown $(id -u):$(id -g) /root/.kube/config
@@ -32,5 +31,5 @@ then
      ssh stacknamecompute_hostname${i} ${JOIN_CMD}
      i=$((i+1))
   done
-  sleep 3330
+  sleep 30
 fi

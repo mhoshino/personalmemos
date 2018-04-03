@@ -32,5 +32,5 @@ then
      ssh stacknamecompute_hostname${i} ${JOIN_CMD}
      i=$((i+1))
   done
-  sleep 60
+  sleep 3330
 fi

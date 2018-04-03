@@ -100,10 +100,9 @@ resources:
       - config: { get_resource: initial_config }
       - config: { get_resource: common_config }
       - config: { get_resource: k8s_config }
-      - config: { get_resource: canal_config }
+      - config: { get_resource: contrail_config }
       - config: { get_resource: gluster_config }
       - config: { get_resource: helm_config }
-      - config: { get_resource: contrail_config }
       - config: { get_resource: openstackhelm_config }
       - config: { get_resource: complete_config }
     type: OS::Heat::MultipartMime

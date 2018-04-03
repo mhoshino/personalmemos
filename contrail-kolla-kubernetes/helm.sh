@@ -1,9 +1,13 @@
 #!/bin/sh
 set -x
+export HELM_VERSION=v2.5.1
+export TMP_DIR=$(mktemp -d)
 if [ `hostname` = "stacknamecontrol_hostname" ]
 then
-	curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-	ssh localhost helm init
+	curl -sSL https://storage.googleapis.com/kubernetes-helm/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar -zxv --strip-components=1 -C ${TMP_DIR}
+	sudo mv ${TMP_DIR}/helm /usr/local/bin/helm
+	rm -rf ${TMP_DIR}
+	ssh localhost helm init 
 	echo "
 [Unit]
 Description=Helm Server

@@ -5,6 +5,12 @@ ssh-keyscan localhost >> /root/.ssh/known_hosts
 ssh-keyscan stacknamecontrol_hostname >> /root/.ssh/known_hosts
 ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
 ssh-keyscan control_ip >> /root/.ssh/known_hosts
+
+echo "contrail_ip  stacknamecontrail_hostname" >> /etc/hosts
+ssh-keyscan localhost >> /root/.ssh/known_hosts
+ssh-keyscan stacknamecontrail_hostname >> /root/.ssh/known_hosts
+ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
+ssh-keyscan contrail_ip >> /root/.ssh/known_hosts
 i=0
 while true
 do

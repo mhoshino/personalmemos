@@ -133,6 +133,8 @@ resources:
             compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
             control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
             compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+            contrail_hostname: { get_param: [ networks, deploy_net , hosts, contrail, name]}
+            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
             docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
           template: 
             get_file: common.sh 
@@ -148,6 +150,8 @@ resources:
             compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
             control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
             compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+            contrail_hostname: { get_param: [ networks, deploy_net , hosts, contrail, name]}
+            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
             external_device: { get_param: [ networks, deploy_net , device]}
           template:
             get_file: k8s.sh
@@ -163,6 +167,8 @@ resources:
             compute_hostname:  { get_param: [ networks, deploy_net , hosts, compute, name]}
             control_ip:  { get_param: [ networks, deploy_net , hosts, control, ip]}
             compute_ip: { get_param: [ networks, deploy_net , hosts, compute, ipprefix]}
+            contrail_hostname: { get_param: [ networks, deploy_net , hosts, contrail, name]}
+            contrail_ip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
           template:
             get_file: contrail.sh
     type: OS::Heat::SoftwareConfig

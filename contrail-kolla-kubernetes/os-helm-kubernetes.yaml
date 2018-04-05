@@ -3,9 +3,12 @@ parameters:
   control_flavor:
     type: string
     default: k8s_ctl_medium
+  contrail_flavor:
+    type: string
+    default: m1.medium
   compute_flavor:
     type: string
-    default: m1.medium80 
+    default: m1.medium
   image:
     type: string
     default: ubuntu-16-04-amd64-cloudimg
@@ -92,6 +95,25 @@ resources:
       key_name: {get_resource: keypair}
       name: { get_param: [ networks, deploy_net , hosts, control, name]}
       deploy_netip: { get_param: [ networks, deploy_net , hosts, control, ip]}
+      deploy_net: {get_resource: deploy_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+      compute_count: { get_param: compute_count }
+      compute: false
+    type: server.yaml
+  contrail:
+    depends_on:
+    - deploy_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: control_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, deploy_net , hosts, contrail, name]}
+      deploy_netip: { get_param: [ networks, deploy_net , hosts, contrail, ip]}
       deploy_net: {get_resource: deploy_net}
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}

@@ -93,8 +93,8 @@ resources:
       flavor: { get_param: aio_flavor}
       image: { get_param: image}
       key_name: {get_resource: keypair}
-      name: { get_param: [ networks, deploy_net , hosts, cid, name]}
-      deploy_netip: { get_param: [ networks, deploy_net , hosts, cid, ip]}
+      name: { get_param: [ networks, deploy_net , hosts, aio, name]}
+      deploy_netip: { get_param: [ networks, deploy_net , hosts, aio, ip]}
       deploy_net: {get_resource: deploy_net}
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}

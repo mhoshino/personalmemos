@@ -1,6 +1,9 @@
 #!/bin/sh
 set -x
-echo "cfg_ip  stacknamecfg_hostname" >> /etc/hosts
+HOSTNAME=`hostname`
+HOSTNAME_IP=`hostname -I | awk '{print $1}'`
+echo "$HOSTNAME_IP $HOSTNAME $HOSTNAME.local" >> /etc/hosts
+echo "cfg_ip  stacknamecfg_hostname stacknamecfg_hostname.local" >> /etc/hosts
 
 apt-get install -y python docker docker.io
 python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
@@ -64,9 +67,13 @@ parameters:
   _param:
     linux_system_codename: xenial
     reclass_data_revision: master
+    stackname: stackname
+    salt_master_host: stacknamecfg_hostname.local
+    domain: local
   linux:
     system:
       name: stacknamecfg_hostname
+      domain: ${_param:domain}
   salt:
     master:
       worker_threads: 5

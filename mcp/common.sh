@@ -15,8 +15,9 @@ apt-get install reclass salt-master -y
 apt-get install salt-common salt-minion -y
 
 cat > /etc/apt/sources.list.d/mcp_salt.list << EOF
-deb [arch=amd64] http://apt.mirantis.com/xenial stable salt
+deb [arch=amd64] http://apt-mk.mirantis.com/xenial stable salt
 EOF
+wget -qO - http://apt-mk.mirantis.com/public.gpg | sudo apt-key add -
 
 cat > /etc/salt/minion.d/minion.conf << EOF
 master: stacknamecfg_hostname
@@ -59,21 +60,21 @@ EOF
   git clone https://github.com/Mirantis/reclass-system-salt-model.git
   mkdir -p /srv/salt/reclass/classes/system
   cp -R /reclass-system-salt-model/* /srv/salt/reclass/classes/system/
-  mkdir -p /srv/salt/reclass/classes/cluster/stackname/infra
-cat > /srv/salt/reclass/nodes/stacknamecfg_hostname.yml <<EOF
+  mkdir -p /srv/salt/reclass/classes/cluster
+cat > /srv/salt/reclass/nodes/stacknamecfg_hostname.local.yml <<EOF
 classes:
 - cluster.stackname.infra.config
 parameters:
   _param:
     linux_system_codename: xenial
     reclass_data_revision: master
-    stackname: stackname
+    stack_name: stackname
     salt_master_host: stacknamecfg_hostname.local
     domain: local
   linux:
     system:
       name: stacknamecfg_hostname
-      domain: ${_param:domain}
+      domain: local
   salt:
     master:
       worker_threads: 5

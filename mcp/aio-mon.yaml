@@ -30,7 +30,7 @@ parameters:
     default:
       deploy_net:
         device: ens3
-        monr: 192.168.0.0/24
+        cidr: 192.168.0.0/24
         hosts:
           cfg:
             name: cfg
@@ -107,7 +107,7 @@ resources:
     type: OS::Neutron::Net
   deploy_subnet:
     properties:
-      monr: { get_param: [ networks, deploy_net , monr]}
+      cidr: { get_param: [ networks, deploy_net , cidr]}
       network: {get_resource: deploy_net}
       dns_nameservers: 
         repeat:

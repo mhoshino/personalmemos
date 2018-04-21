@@ -109,7 +109,6 @@ resources:
             stackname: { get_param: stackname }
             cfg_hostname:   { get_param: [ networks, deploy_net , hosts, cfg, name]}
             cfg_ip:  { get_param: [ networks, deploy_net , hosts, cfg, ip]}
-            docker_bridge_ip: { get_param: [ networks, docker_bridge ]}
           template: 
             get_file: common.sh 
     type: OS::Heat::SoftwareConfig

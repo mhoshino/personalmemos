@@ -5,14 +5,16 @@ HOSTNAME_IP=`hostname -I | awk '{print $1}'`
 echo "$HOSTNAME_IP $HOSTNAME $HOSTNAME.local" >> /etc/hosts
 echo "cfg_ip  stacknamecfg_hostname stacknamecfg_hostname.local" >> /etc/hosts
 
-apt-get install -y python docker docker.io
-python -c 'import json; obj={}; obj["bip"]="docker_bridge_ip"; print(json.dumps(obj))' > /etc/docker/daemon.json
-systemctl restart docker
 apt-get install --no-install-recommends -y git
 apt-get install git vim tree python-pip -y
 pip install --upgrade pip
-apt-get install salt-common salt-minion -y
 
+wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/2016.3/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
+cat > /etc/apt/sources.list.d/saltstack.list << EOF
+deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/2016.3 xenial main
+EOF
+apt-get update
+apt-get install salt-common salt-minion -y
 
 cat > /etc/salt/minion.d/minion.conf << EOF
 master: stacknamecfg_hostname

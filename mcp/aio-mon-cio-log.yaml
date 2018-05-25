@@ -5,58 +5,58 @@ parameters:
     default: m1.small
   aio_flavor:
     type: string
-    default: m1.xlarge
+    default: m1.medium
   mon_flavor:
     type: string
-    default: m1.large
+    default: m1.medium
   cid_flavor:
     type: string
-    default: m1.large
-  log_flavor: 
+    default: m1.medium
+  log_flavor:
     type: string
-    default: m1.large
+    default: m1.medium
   image:
     type: string
-    default: ubuntu-16-04-amd64-cloudimg
+    default: xenial-server-cloudimg
   availability_zone:
     type: string
-    default: mcp-support
+    default: nova
   public_net:
     type: string
-    default: public
+    default: ext-net
   dns_servers:
     type: comma_delimited_list
     label: dns_servers
-    default: 172.18.208.44
+    default: 8.8.8.8
   networks:
     type: json
     default:
       deploy_net:
         device: ens3
-        cidr: 192.168.0.0/24
+        cidr: 172.13.0.0/24
         hosts:
           cfg:
             name: cfg
-            ip: 192.168.0.10
+            ip: 172.13.0.10
           aio:
             name: aio
-            ip: 192.168.0.11
+            ip: 172.13.0.11
           mon:
             name: mon
-            ip: 192.168.0.12
+            ip: 172.13.0.12
           cid:
             name: cid
-            ip: 192.168.0.13
+            ip: 172.13.0.13
           log:
             name: log
-            ip: 192.168.0.14
+            ip: 172.13.0.14
 outputs:
+  cfg_floating_ip:
+    value:
+      get_attr: [floating_ip, floating_ip_address]
   privtate_key:
     value:
       get_attr: [keypair, private_key]
-  cfg_floating_ip:
-    value:
-      get_attr: [cfg, floating_ip_address]
 resources:
   cfg:
     depends_on:
@@ -173,4 +173,11 @@ resources:
         get_attr: [keyname_random, value]
       save_private_key: true
     type: OS::Nova::KeyPair
-
+  floating_ip:
+    properties: {floating_network: { get_param: public_net }}
+    type: OS::Neutron::FloatingIP
+  floating_ip_associate:
+    properties:
+      floatingip_id: {get_resource: floating_ip}
+      port_id: {get_attr: [cfg, port_id]}
+    type: OS::Neutron::FloatingIPAssociation

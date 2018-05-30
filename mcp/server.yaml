@@ -24,6 +24,9 @@ parameters:
     type: string
   private_key:
     type: string
+  timeout:
+    type: string
+    default: 3600
 outputs:
   server_id:
     value:
@@ -72,6 +75,7 @@ resources:
       parts:
       - config: { get_resource: initial_config }
       - config: { get_resource: common_config }
+      - config: { get_resource: complete_config }
     type: OS::Heat::MultipartMime
   initial_config:
     properties:
@@ -100,3 +104,20 @@ resources:
           template: 
             get_file: common.sh 
     type: OS::Heat::SoftwareConfig
+  complete_config:
+    properties:
+      config:
+        str_replace:
+          params:
+            wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
+          template: | 
+            #!/bin/sh
+            wc_notify --data-binary '{"status": "SUCCESS"}' -k
+    type: OS::Heat::SoftwareConfig
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: {get_resource: wait_handle}
+      timeout: { get_param: timeout }
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle

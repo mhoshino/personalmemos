@@ -22,6 +22,10 @@ parameters:
     type: string
   private_key:
     type: string
+  cfg_hostname:
+    type: string
+  cfg_ip:
+    type: string
   timeout:
     type: string
     default: 3600
@@ -49,9 +53,6 @@ outputs:
   server_id:
     value:
       get_resource: server
-  port_id:
-    value:
-      get_resource: deploy_netport
 resources:
   server:
     type: OS::Nova::Server
@@ -121,8 +122,8 @@ resources:
         str_replace:
           params:
             stackname: { get_param: stackname }
-            cfg_hostname:   { get_param: [ networks, deploy_net , hosts, cfg, name]}
-            cfg_ip:  { get_param: [ networks, deploy_net , hosts, cfg, ip]}
+            cfg_hostname: { get_param: cfg_hostname }
+            cfg_ip: { get_param: cfg_ip } 
             ubuntu_version: { get_param: ubuntu_version }
             ubuntu_code: { get_param: ubuntu_code }
             salt_version: { get_param: salt_version }

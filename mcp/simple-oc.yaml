@@ -5,7 +5,7 @@ parameters:
     default: m1.small
   oc_flavor:
     type: string
-    default: m1.medium
+    default: m1.medium_8gb_ram
   vsrx_flavor:
     type: string
     default: m1.medium80
@@ -26,7 +26,7 @@ parameters:
     default: nova
   public_net:
     type: string
-    default: floating_net
+    default: public
   dns_servers:
     type: comma_delimited_list
     label: dns_servers
@@ -79,6 +79,8 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
+      cfg_hostname: { get_param: [ networks, deploy_net  , hosts, cfg, name]}
+      cfg_ip: { get_param: [ networks, deploy_ne , hosts, cfg, ip ]}
     type: server.yaml
   oc:
     depends_on:
@@ -95,6 +97,8 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
+      cfg_hostname: { get_param: [ networks, deploy_net  , hosts, cfg, name]}
+      cfg_ip: { get_param: [ networks, deploy_ne , hosts, cfg, ip ]}
     type: server.yaml
   vsrx:
     depends_on:
@@ -112,6 +116,8 @@ resources:
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
       waithandle: false # do not wait handle for vsrx
+      cfg_hostname: { get_param: [ networks, deploy_net  , hosts, cfg, name]}
+      cfg_ip: { get_param: [ networks, deploy_ne , hosts, cfg, ip ]}
     type: server.yaml
   ctl:
     depends_on:
@@ -128,6 +134,8 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
+      cfg_hostname: { get_param: [ networks, deploy_net  , hosts, cfg, name]}
+      cfg_ip: { get_param: [ networks, deploy_ne , hosts, cfg, ip ]}
     type: server.yaml
   cmp:
     type: OS::Heat::ResourceGroup
@@ -157,6 +165,8 @@ resources:
           public_net: { get_param: public_net }
           public_key: { get_attr: [ keypair, public_key ]}
           private_key: { get_attr: [ keypair, private_key ]}
+          cfg_hostname: { get_param: [ networks, deploy_net  , hosts, cfg, name]}
+          cfg_ip: { get_param: [ networks, deploy_ne , hosts, cfg, ip ]}
   deploy_net:
     properties: {name: deploy_net}
     type: OS::Neutron::Net

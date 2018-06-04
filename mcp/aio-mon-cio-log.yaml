@@ -73,7 +73,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   aio:
     depends_on:
@@ -90,7 +89,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   mon:
     depends_on:
@@ -107,7 +105,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   cid:
     depends_on:
@@ -124,7 +121,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   log:
     depends_on:
@@ -141,7 +137,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml         
   deploy_net:
     properties: {name: deploy_net}

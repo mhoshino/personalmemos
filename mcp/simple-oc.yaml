@@ -79,7 +79,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   oc:
     depends_on:
@@ -96,7 +95,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   vsrx:
     depends_on:
@@ -113,7 +111,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
       waithandle: false # do not wait handle for vsrx
     type: server.yaml
   ctl:
@@ -131,7 +128,6 @@ resources:
       public_net: { get_param: public_net }
       public_key: { get_attr: [ keypair, public_key ]}
       private_key: { get_attr: [ keypair, private_key ]}
-      networks: { get_param: networks }
     type: server.yaml
   cmp:
     type: OS::Heat::ResourceGroup
@@ -161,7 +157,6 @@ resources:
           public_net: { get_param: public_net }
           public_key: { get_attr: [ keypair, public_key ]}
           private_key: { get_attr: [ keypair, private_key ]}
-          networks: { get_param: networks }
   deploy_net:
     properties: {name: deploy_net}
     type: OS::Neutron::Net

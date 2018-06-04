@@ -27,6 +27,14 @@ parameters:
   timeout:
     type: string
     default: 3600
+  waithandle:
+    type: boolean
+    default: true 
+conditions:
+  create_handle:
+    equals:
+     - get_param: waithandle
+     - true
 outputs:
   server_id:
     value:
@@ -73,9 +81,13 @@ resources:
   cloud_config:
     properties:
       parts:
-      - config: { get_resource: initial_config }
-      - config: { get_resource: common_config }
-      - config: { get_resource: complete_config }
+        if:
+          - create_handle
+          - - config: { get_resource: initial_config }
+            - config: { get_resource: common_config }
+            - config: { get_resource: complete_config }
+          - - config: { get_resource: initial_config }
+            - config: { get_resource: common_config }
     type: OS::Heat::MultipartMime
   initial_config:
     properties:
@@ -105,6 +117,7 @@ resources:
             get_file: common.sh 
     type: OS::Heat::SoftwareConfig
   complete_config:
+    condition: create_handle
     properties:
       config:
         str_replace:
@@ -115,9 +128,11 @@ resources:
             wc_notify --data-binary '{"status": "SUCCESS"}' -k
     type: OS::Heat::SoftwareConfig
   wait_condition:
+    condition: create_handle
     type: OS::Heat::WaitCondition
     properties:
       handle: {get_resource: wait_handle}
       timeout: { get_param: timeout }
   wait_handle:
+    condition: create_handle
     type: OS::Heat::WaitConditionHandle

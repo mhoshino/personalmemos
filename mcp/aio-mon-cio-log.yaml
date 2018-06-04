@@ -23,7 +23,7 @@ parameters:
     default: nova
   public_net:
     type: string
-    default: ext-net
+    default: floating_net
   dns_servers:
     type: comma_delimited_list
     label: dns_servers

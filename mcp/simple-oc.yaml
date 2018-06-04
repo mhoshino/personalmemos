@@ -1,0 +1,198 @@
+heat_template_version: '2017-02-24'
+parameters:
+  cfg_flavor:
+    type: string
+    default: m1.small
+  oc_flavor:
+    type: string
+    default: m1.large
+  vsrx_flavor:
+    type: string
+    default: m1.medium80
+  control_flavor:
+    type: string
+    default: m1.medium
+  compute_flavor:
+    type: string
+    default: m1.medium
+  image:
+    type: string
+    default: xenial-server-cloudimg
+  availability_zone:
+    type: string
+    default: nova
+  public_net:
+    type: string
+    default: floating_net
+  dns_servers:
+    type: comma_delimited_list
+    label: dns_servers
+    default: 8.8.8.8
+  cmp_count:
+    type: string
+    default: 2
+  networks:
+    type: json
+    default:
+      deploy_net:
+        device: ens3
+        cidr: 172.13.0.0/24
+        hosts:
+          cfg:
+            name: cfg
+            ip: 172.13.0.10
+          oc:
+            name: oc
+            ip: 172.13.0.11
+          vsrx:
+            name: vsrx
+            ip: 172.13.0.12
+          ctl:
+            name: ctl
+            ip: 172.13.0.13
+          cmp:
+            name: cmp
+            ipprefix: 172.13.0.10
+outputs:
+  cfg_floating_ip:
+    value:
+      get_attr: [floating_ip, floating_ip_address]
+  privtate_key:
+    value:
+      get_attr: [keypair, private_key]
+resources:
+  cfg:
+    depends_on:
+    - deploy_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: cfg_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, deploy_net , hosts, cfg, name]}
+      deploy_netip: { get_param: [ networks, deploy_net , hosts, cfg, ip]}
+      deploy_net: {get_resource: deploy_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+    type: server.yaml
+  oc:
+    depends_on:
+    - deploy_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: oc_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, deploy_net , hosts, oc, name]}
+      deploy_netip: { get_param: [ networks, deploy_net , hosts, oc, ip]}
+      deploy_net: {get_resource: deploy_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+    type: server.yaml
+  vsrx:
+    depends_on:
+    - deploy_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: vsrx_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, deploy_net , hosts, vsrx, name]}
+      deploy_netip: { get_param: [ networks, deploy_net , hosts, vsrx, ip]}
+      deploy_net: {get_resource: deploy_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+    type: server.yaml
+  ctl:
+    depends_on:
+    - deploy_subnet
+    properties:
+      stackname: {get_param: 'OS::stack_name' }
+      availability_zone: { get_param: availability_zone}
+      flavor: { get_param: mon_flavor}
+      image: { get_param: image}
+      key_name: {get_resource: keypair}
+      name: { get_param: [ networks, deploy_net , hosts, ctl, name]}
+      deploy_netip: { get_param: [ networks, deploy_net , hosts, ctl, ip]}
+      deploy_net: {get_resource: deploy_net}
+      public_net: { get_param: public_net }
+      public_key: { get_attr: [ keypair, public_key ]}
+      private_key: { get_attr: [ keypair, private_key ]}
+      networks: { get_param: networks }
+    type: server.yaml
+  cmp:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+    - deploy_subnet
+    properties:
+      count: { get_param: cmp_count }
+      resource_def:
+        type: server.yml
+        properties:
+          stackname: {get_param: 'OS::stack_name' }
+          availability_zone: { get_param: availability_zone}
+          flavor: { get_param: cmp_flavor}
+          image: { get_param: image}
+          key_name: {get_resource: keypair}
+          name:
+            str_replace:
+              template: name%index%
+              params:
+                name: { get_param: [ networks, deploy_net , hosts, cmp, name]}
+          deploy_netip:
+            str_replace:
+              template: startip%index%
+              params:
+                startip: { get_param: [ networks, deploy_net , hosts, cmp, ipprefix]}
+          deploy_net: {get_resource: deploy_net}
+          public_net: { get_param: public_net }
+          public_key: { get_attr: [ keypair, public_key ]}
+          private_key: { get_attr: [ keypair, private_key ]}
+          networks: { get_param: networks }
+  deploy_net:
+    properties: {name: deploy_net}
+    type: OS::Neutron::Net
+  deploy_subnet:
+    properties:
+      cidr: { get_param: [ networks, deploy_net , cidr]}
+      network: {get_resource: deploy_net}
+      dns_nameservers: 
+        repeat:
+          for_each:
+            dns_server: { get_param: dns_servers }
+          template:
+            dns_server
+    type: OS::Neutron::Subnet
+  ext_router:
+    properties:
+      external_gateway_info: {network: { get_param: public_net }}
+    type: OS::Neutron::Router
+  ext_router_assignment:
+    properties:
+      router: {get_resource: ext_router}
+      subnet: {get_resource: deploy_subnet}
+    type: OS::Neutron::RouterInterface
+  keyname_random: {type: 'OS::Heat::RandomString'}
+  keypair:
+    properties:
+      name:
+        get_attr: [keyname_random, value]
+      save_private_key: true
+    type: OS::Nova::KeyPair
+  floating_ip:
+    properties: {floating_network: { get_param: public_net }}
+    type: OS::Neutron::FloatingIP
+  floating_ip_associate:
+    properties:
+      floatingip_id: {get_resource: floating_ip}
+      port_id: {get_attr: [cfg, port_id]}
+    type: OS::Neutron::FloatingIPAssociation

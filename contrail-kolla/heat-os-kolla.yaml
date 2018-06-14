@@ -8,7 +8,7 @@ parameters:
     default: m1.medium80
   compute_flavor:
     type: string
-    default: os_cmp_small
+    default: m1.medium
   image:
     type: string
     default: ubuntu-16-04-amd64-cloudimg

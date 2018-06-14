@@ -199,7 +199,7 @@ resources:
                 sed -i 's/^compute01/'"${computehosts_list}"'/g' /kolla-ansible/ansible/inventory/multinode
                 echo 'orchestration_engine: "ANSIBLE"' >> /kolla-ansible/ansible/group_vars/all.yml
               fi
-              wc_notify --data-binary '{"status": "SUCCESS"}'
+              wc_notify --data-binary '{"status": "SUCCESS"}' -k
         write_files:
         - path: /root/.ssh/id_rsa
           permissions: 0600

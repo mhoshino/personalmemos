@@ -46,8 +46,8 @@ This will create the following.
 - All OpenStack services will be containerized
 ```
 cd /kolla-ansible/ansible/
-ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=bootstrap-servers kolla-host.yml
-ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e action=deploy site.yml
+ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e kolla_action=bootstrap-servers kolla-host.yml
+ansible-playbook -i inventory/multinode -e @../etc/kolla/globals.yml -e @../etc/kolla/passwords.yml -e kolla_action=deploy site.yml
 ```
 If execution fails first check if rabbitmq is running.
 In error states you well see rabbitmq status falling into a loop of "Restarting"
